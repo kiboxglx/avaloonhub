@@ -15,7 +15,6 @@ const NAV_ITEMS = {
         { icon: Calendar, label: "Calendário", path: "/dashboard/calendar" },
         { icon: Layers, label: "Conteúdo", path: "/dashboard/planning" },
         { icon: Video, label: "Demandas", path: "/dashboard/briefings" },
-        { icon: Box, label: "Inventário", path: "/dashboard/inventory" },
         { icon: Users, label: "Equipe", path: "/dashboard/team" },
         { icon: BarChart3, label: "Inteligência", path: "/dashboard/reports" },
         { icon: ShoppingBag, label: "Financeiro", path: "/dashboard/finance" },
@@ -26,7 +25,6 @@ const NAV_ITEMS = {
     videomaker: [
         { icon: Home, label: "Dashboard", path: "/dashboard" },
         { icon: Video, label: "Demandas", path: "/dashboard/briefings" },
-        { icon: Box, label: "Meus Equips", path: "/dashboard/inventory" },
         { icon: Calendar, label: "Agenda", path: "/dashboard/calendar" },
         { icon: Users, label: "Perfil", path: "/dashboard/profile" },
     ],

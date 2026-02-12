@@ -14,7 +14,6 @@ import Profile from "@/pages/Profile";
 import Finance from "@/pages/Finance";
 import Clients from "@/pages/Clients";
 import Settings from "@/pages/Settings";
-import Inventory from "@/pages/Inventory";
 import ContentPlanning from "@/pages/ContentPlanning";
 import ActivityLog from "@/pages/ActivityLog"; // Import Activity Log
 
@@ -45,7 +44,6 @@ function App() {
                             <Route path="settings" element={<Settings />} />
                             <Route path="briefings" element={<Briefings />} />
                             <Route path="profile" element={<Profile />} />
-                            <Route path="inventory" element={<Inventory />} />
                             <Route path="planning" element={<ContentPlanning />} />
                             <Route path="activity" element={<ActivityLog />} />
                         </Route>

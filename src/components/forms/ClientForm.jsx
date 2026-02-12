@@ -79,9 +79,10 @@ export function ClientForm({ onClose, onSuccess }) {
                                 value={formData.tier}
                                 onChange={e => setFormData({ ...formData, tier: e.target.value })}
                             >
-                                <option value="Standard">Standard</option>
+                                <option value="Padrão">Padrão</option>
+                                <option value="MID">MID</option>
                                 <option value="Premium">Premium</option>
-                                <option value="Enterprise">Enterprise</option>
+                                <option value="Black">Black</option>
                             </select>
                         </div>
                     </div>
