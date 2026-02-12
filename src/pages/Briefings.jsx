@@ -1,33 +1,44 @@
 import { useState, useEffect } from "react";
 import { KanbanBoard } from "@/components/ui/KanbanBoard";
 import { ButtonAvaloon } from "@/components/ui/ButtonAvaloon";
-import { Plus, LayoutTemplate, ListFilter, Folder, Save, ExternalLink } from "lucide-react";
+import { Plus, LayoutTemplate, ListFilter, Folder, Save } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { DemandForm } from "@/components/forms/DemandForm";
+import { dataService } from "@/services/dataService";
 
 export default function Briefings() {
     const [view, setView] = useState('board');
     const [driveLink, setDriveLink] = useState('');
     const [isConfiguring, setIsConfiguring] = useState(false);
+    const [showNewDemandForm, setShowNewDemandForm] = useState(false);
+    const [demands, setDemands] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         const savedLink = localStorage.getItem('avaloon_drive_folder');
         if (savedLink) setDriveLink(savedLink);
+        loadDemands();
     }, []);
+
+    const loadDemands = async () => {
+        setIsLoading(true);
+        try {
+            const data = await dataService.demands.getAll();
+            setDemands(data || []);
+        } catch (error) {
+            console.error("Failed to load demands", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleSaveDrive = () => {
         localStorage.setItem('avaloon_drive_folder', driveLink);
         setIsConfiguring(false);
     };
 
-    // Extract Folder ID from URL for embed if possible, or just use the URL
-    const getEmbedUrl = (url) => {
-        // Simple logic: if it looks like a folder URL, try to adapt. 
-        // Real embed usually requires specific construct, but iframe src usually works for shared folders if permissions allow.
-        // For best results, we might just use the URL directly if valid.
-        return url;
-    };
-
     return (
-        <div className="h-full flex flex-col space-y-6">
+        <div className="h-full flex flex-col space-y-6 relative">
             <div className="flex justify-between items-center">
                 <div>
                     <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
@@ -60,17 +71,19 @@ export default function Briefings() {
                         </button>
                     </div>
 
-                    <ButtonAvaloon variant="primary">
+                    <ButtonAvaloon variant="primary" onClick={() => setShowNewDemandForm(true)}>
                         <Plus className="w-4 h-4" /> Novo Projeto
                     </ButtonAvaloon>
                 </div>
             </div>
 
             <div className="flex-1 overflow-hidden min-h-[600px] flex flex-col">
-                {view === 'board' && <KanbanBoard />}
+                {view === 'board' && (
+                    <KanbanBoard tasks={demands} onTaskUpdate={loadDemands} />
+                )}
 
                 {view === 'list' && (
-                    <div className="text-center py-20 text-slate-500 border border-dashed border-[#2d2d42] rounded-xl">
+                    <div className="text-center py-20 text-slate-500 border border-dashed border-[#2d2d42] rounded-xl flex-1">
                         Visualização em lista (Em desenvolvimento)
                     </div>
                 )}
@@ -106,13 +119,11 @@ export default function Briefings() {
                             </div>
                         ) : driveLink ? (
                             <div className="flex-1 relative w-full h-full">
-                                {/* Using iframe to trick Google Drive embed or just showing a link if embed is blocked */}
                                 <iframe
                                     src={driveLink}
                                     className="w-full h-full border-none"
                                     title="Google Drive"
                                 ></iframe>
-                                {/* Overlay hint in case iframe refuses to load due to x-frame-options */}
                                 <div className="absolute bottom-4 right-4 bg-black/80 p-2 rounded text-xs text-slate-400 pointer-events-none">
                                     Se não carregar, <a href={driveLink} target="_blank" rel="noreferrer" className="text-avaloon-orange pointer-events-auto hover:underline">abra no navegador</a>.
                                 </div>
@@ -129,6 +140,36 @@ export default function Briefings() {
                     </div>
                 )}
             </div>
+
+            {/* Demand Form Modal */}
+            <AnimatePresence>
+                {showNewDemandForm && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowNewDemandForm(false)}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        />
+                        <motion.div
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed inset-y-0 right-0 w-full max-w-md bg-[#111121] border-l border-[#2d2d42] z-50 shadow-2xl"
+                        >
+                            <DemandForm
+                                onClose={() => setShowNewDemandForm(false)}
+                                onSuccess={() => {
+                                    loadDemands();
+                                    setShowNewDemandForm(false);
+                                }}
+                            />
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

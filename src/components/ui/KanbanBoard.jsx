@@ -3,13 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, MoreHorizontal, Calendar, User, ArrowRight, MessageSquare } from "lucide-react";
 import { cn } from "@/utils/cn";
 
-const INITIAL_TASKS = [
-    { id: "1", title: "Campanha Verão 2024", client: "Alpha Inc", status: "TODO", priority: "High", due: "15 Ago", assignee: "SJ" },
-    { id: "2", title: "Reels Institucionais", client: "Beta Corp", status: "DOING", priority: "Medium", due: "18 Ago", assignee: "MC" },
-    { id: "3", title: "Cobertura Evento Tech", client: "Gamma Ltd", status: "DONE", priority: "Low", due: "10 Ago", assignee: "DR" },
-    { id: "4", title: "Edição Podcast #45", client: "Podcast Flow", status: "DOING", priority: "High", due: "Today", assignee: "JL" },
-    { id: "5", title: "Color Grading Doc", client: "DocuFilms", status: "REVIEW", priority: "Medium", due: "22 Ago", assignee: "JL" },
-];
+import { dataService } from "@/services/dataService";
+import { format } from "date-fns";
 
 const COLUMNS = [
     { id: "TODO", title: "A Fazer", color: "bg-slate-500/10 border-slate-500/20 text-slate-400" },
@@ -18,11 +13,16 @@ const COLUMNS = [
     { id: "DONE", title: "Concluído", color: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" },
 ];
 
-export const KanbanBoard = () => {
-    const [tasks, setTasks] = useState(INITIAL_TASKS);
+export const KanbanBoard = ({ tasks = [], onTaskUpdate }) => {
 
-    const moveTask = (taskId, newStatus) => {
-        setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+    const moveTask = async (taskId, newStatus) => {
+        // Optimistic update could happen here in parent, but for now we just call API
+        try {
+            await dataService.demands.updateStatus(taskId, newStatus);
+            if (onTaskUpdate) onTaskUpdate();
+        } catch (error) {
+            console.error("Failed to move task", error);
+        }
     };
 
     return (
@@ -64,17 +64,19 @@ export const KanbanBoard = () => {
                                     </div>
 
                                     <h4 className="font-bold text-white mb-1">{task.title}</h4>
-                                    <p className="text-xs text-[#9595c6] mb-4">{task.client}</p>
+                                    <p className="text-xs text-[#9595c6] mb-4">{task.clients?.name || 'Cliente removido'}</p>
 
                                     <div className="flex items-center justify-between pt-3 border-t border-[#2d2d42]">
                                         <div className="flex -space-x-2">
-                                            <div className="w-6 h-6 rounded-full bg-avaloon-orange flex items-center justify-center text-[10px] font-bold text-white border border-[#1e1e2d]" title={task.assignee}>
-                                                {task.assignee}
-                                            </div>
+                                            {task.services?.name && (
+                                                <div className="px-2 py-0.5 rounded bg-[#252546] text-[10px] text-slate-300 border border-[#2d2d42]">
+                                                    {task.services.name}
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="flex items-center gap-2 text-xs text-slate-400">
                                             <Calendar className="w-3 h-3" />
-                                            <span>{task.due}</span>
+                                            <span>{task.scheduled_at ? format(new Date(task.scheduled_at), 'dd/MM') : '-'}</span>
                                         </div>
                                     </div>
 
