@@ -8,6 +8,7 @@ import {
     Instagram, Facebook, Linkedin, Youtube, Twitter, Globe, Users
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ClientForm } from "@/components/forms/ClientForm";
 
 // Helper for status badges
 const StatusBadge = ({ status }) => {
@@ -35,6 +36,7 @@ export default function Clients() {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedClient, setSelectedClient] = useState(null);
     const [editingDriveLink, setEditingDriveLink] = useState("");
+    const [showClientForm, setShowClientForm] = useState(false);
 
     // Load Clients from Supabase
     useEffect(() => {
@@ -59,16 +61,42 @@ export default function Clients() {
         setEditingDriveLink(client.drive_link || ""); // Note: database uses snake_case
     };
 
-    const handleSaveLink = () => {
+    const handleSaveLink = async () => {
         if (!selectedClient) return;
-        // Ideally save to DB here too
-        const updatedClients = clients.map(c =>
-            c.id === selectedClient.id ? { ...c, drive_link: editingDriveLink } : c
-        );
-        setClients(updatedClients);
-        // Also update selected client in place to reflect changes in overlay
-        setSelectedClient({ ...selectedClient, drive_link: editingDriveLink });
+
+        try {
+            await dataService.clients.update(selectedClient.id, {
+                drive_link: editingDriveLink,
+                files_count: selectedClient.filesCount // if this KPI was editable
+            });
+
+            // Optimistic update
+            const updatedClients = clients.map(c =>
+                c.id === selectedClient.id ? { ...c, drive_link: editingDriveLink } : c
+            );
+            setClients(updatedClients);
+            setSelectedClient({ ...selectedClient, drive_link: editingDriveLink });
+            alert("Link do Drive atualizado!");
+        } catch (error) {
+            console.error("Erro ao atualizar link:", error);
+            alert("Erro ao salvar link.");
+        }
     };
+
+    const handleUpdateSocials = async (newAccounts) => {
+        try {
+            await dataService.clients.update(selectedClient.id, {
+                social_accounts: newAccounts
+            });
+
+            // Optimistic update
+            setSelectedClient({ ...selectedClient, social_accounts: newAccounts });
+            setClients(clients.map(c => c.id === selectedClient.id ? { ...c, social_accounts: newAccounts } : c));
+        } catch (error) {
+            console.error("Erro ao atualizar redes:", error);
+            alert("Erro ao salvar redes sociais.");
+        }
+    }
 
     return (
         <div className="flex flex-col w-full h-full relative">
@@ -81,7 +109,7 @@ export default function Clients() {
                     </p>
                 </div>
                 <div className="flex gap-3">
-                    <ButtonAvaloon variant="primary">
+                    <ButtonAvaloon variant="primary" onClick={() => setShowClientForm(true)}>
                         <Plus className="w-5 h-5" /> Adicionar Cliente
                     </ButtonAvaloon>
                 </div>
@@ -200,7 +228,7 @@ export default function Clients() {
                 })}
             </div>
 
-            {/* Client Overlay (Preserved functionality) */}
+            {/* Client Overlay */}
             <AnimatePresence>
                 {selectedClient && (
                     <>
@@ -270,9 +298,9 @@ export default function Clients() {
                                                         min="0"
                                                         value={selectedClient.filesCount || 0}
                                                         onChange={(e) => {
-                                                            const count = parseInt(e.target.value) || 0;
-                                                            setSelectedClient({ ...selectedClient, filesCount: count });
-                                                            setClients(clients.map(c => c.id === selectedClient.id ? { ...c, filesCount: count } : c));
+                                                            // Usually we shouldn't update props directly like this if it comes from API without a save
+                                                            // But for now keeping UI consistent
+                                                            setSelectedClient({ ...selectedClient, filesCount: parseInt(e.target.value) || 0 });
                                                         }}
                                                         className="w-20 bg-[#1e1e2d] border border-[#2d2d42] rounded px-2 py-1 text-right text-white font-bold focus:outline-none focus:border-avaloon-orange"
                                                     />
@@ -313,9 +341,7 @@ export default function Clients() {
                                             onClick={() => {
                                                 const newAccount = { id: Date.now(), platform: 'Instagram', username: '', password: '' };
                                                 const updatedAccounts = [...(selectedClient.social_accounts || []), newAccount];
-                                                setSelectedClient({ ...selectedClient, social_accounts: updatedAccounts });
-                                                // Note: Updating remote DB for social accounts is skipped for brevity here, mirroring local update only
-                                                setClients(clients.map(c => c.id === selectedClient.id ? { ...c, social_accounts: updatedAccounts } : c));
+                                                handleUpdateSocials(updatedAccounts);
                                             }}
                                         >
                                             <Plus className="w-3 h-3" /> Adicionar Conta
@@ -339,9 +365,19 @@ export default function Clients() {
                                                             value={account.platform}
                                                             onChange={(e) => {
                                                                 const updated = selectedClient.social_accounts.map(a => a.id === account.id ? { ...a, platform: e.target.value } : a);
-                                                                setSelectedClient({ ...selectedClient, social_accounts: updated });
-                                                                setClients(clients.map(c => c.id === selectedClient.id ? { ...c, social_accounts: updated } : c));
+                                                                // Don't save on every keystroke/change, maybe add a save button per row or global?
+                                                                // For now, updating local state for immediacy, but ideally should have a save button.
+                                                                // Let's rely on a blur or just update local state and have a global save?
+                                                                // To keep it simple as requested "fix buttons", I will update local state and assume auto-save or 'onAdd' triggers save.
+                                                                // Actually let's add a small save button or just save onBlur would be better but complex.
+                                                                // I'll update local state and provide a "Save" action implicitly or explicitly.
+                                                                // Re-reading user request: "analise e resolva".
+                                                                // I will make the inputs update local state, and rely on the Add/Remove to trigger saves, OR add a specific save for the list.
+                                                                // Let's try to update immediately for simple UX.
+                                                                const newAccounts = selectedClient.social_accounts.map(a => a.id === account.id ? { ...a, platform: e.target.value } : a);
+                                                                setSelectedClient({ ...selectedClient, social_accounts: newAccounts });
                                                             }}
+                                                            onBlur={() => handleUpdateSocials(selectedClient.social_accounts)}
                                                         >
                                                             <option>Instagram</option>
                                                             <option>TikTok</option>
@@ -358,10 +394,10 @@ export default function Clients() {
                                                             className="w-full bg-[#111121] border border-[#2d2d42] rounded px-2 py-1 text-sm text-white focus:border-avaloon-orange outline-none"
                                                             value={account.username}
                                                             onChange={(e) => {
-                                                                const updated = selectedClient.social_accounts.map(a => a.id === account.id ? { ...a, username: e.target.value } : a);
-                                                                setSelectedClient({ ...selectedClient, social_accounts: updated });
-                                                                setClients(clients.map(c => c.id === selectedClient.id ? { ...c, social_accounts: updated } : c));
+                                                                const newAccounts = selectedClient.social_accounts.map(a => a.id === account.id ? { ...a, username: e.target.value } : a);
+                                                                setSelectedClient({ ...selectedClient, social_accounts: newAccounts });
                                                             }}
+                                                            onBlur={() => handleUpdateSocials(selectedClient.social_accounts)}
                                                             placeholder="@usuario"
                                                         />
                                                     </div>
@@ -373,10 +409,10 @@ export default function Clients() {
                                                         className="w-full bg-[#111121] border border-[#2d2d42] rounded px-2 py-1 text-sm text-white focus:border-avaloon-orange outline-none font-mono"
                                                         value={account.password}
                                                         onChange={(e) => {
-                                                            const updated = selectedClient.social_accounts.map(a => a.id === account.id ? { ...a, password: e.target.value } : a);
-                                                            setSelectedClient({ ...selectedClient, social_accounts: updated });
-                                                            setClients(clients.map(c => c.id === selectedClient.id ? { ...c, social_accounts: updated } : c));
+                                                            const newAccounts = selectedClient.social_accounts.map(a => a.id === account.id ? { ...a, password: e.target.value } : a);
+                                                            setSelectedClient({ ...selectedClient, social_accounts: newAccounts });
                                                         }}
+                                                        onBlur={() => handleUpdateSocials(selectedClient.social_accounts)}
                                                         placeholder="Senha..."
                                                     />
                                                 </div>
@@ -384,8 +420,7 @@ export default function Clients() {
                                                     className="absolute top-2 right-2 p-1 text-slate-600 hover:text-red-500 transition-colors"
                                                     onClick={() => {
                                                         const updated = selectedClient.social_accounts.filter(a => a.id !== account.id);
-                                                        setSelectedClient({ ...selectedClient, social_accounts: updated });
-                                                        setClients(clients.map(c => c.id === selectedClient.id ? { ...c, social_accounts: updated } : c));
+                                                        handleUpdateSocials(updated);
                                                     }}
                                                 >
                                                     <X className="w-4 h-4" />
@@ -395,6 +430,36 @@ export default function Clients() {
                                     </div>
                                 </div>
                             </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
+            {/* Client Form Modal */}
+            <AnimatePresence>
+                {showClientForm && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowClientForm(false)}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        />
+                        <motion.div
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed inset-y-0 right-0 w-full max-w-md bg-[#111121] border-l border-[#2d2d42] z-50 shadow-2xl"
+                        >
+                            <ClientForm
+                                onClose={() => setShowClientForm(false)}
+                                onSuccess={() => {
+                                    loadClients();
+                                    setShowClientForm(false);
+                                }}
+                            />
                         </motion.div>
                     </>
                 )}
