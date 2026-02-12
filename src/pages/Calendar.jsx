@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Clock, MapPi
 import { motion, AnimatePresence } from "framer-motion";
 import { dataService } from "@/services/dataService";
 import { DemandForm } from "@/components/forms/DemandForm";
+import { ShootForm } from "@/components/forms/ShootForm";
 
 export default function Calendar() {
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -12,6 +13,7 @@ export default function Calendar() {
     const [events, setEvents] = useState([]); // Real events
     const [isLoading, setIsLoading] = useState(true);
     const [showDemandForm, setShowDemandForm] = useState(false);
+    const [showShootForm, setShowShootForm] = useState(false);
 
     const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
@@ -30,6 +32,10 @@ export default function Calendar() {
                     else if (d.services.name.toLowerCase().includes('edi') || d.services.name.toLowerCase().includes('post')) type = 'POST_PRODUCTION';
                 }
 
+                // If shoot form saves extra data in briefing_data, use it
+                const location = d.briefing_data?.location || "Estúdio Avaloon";
+                const crew = d.briefing_data?.crew_ids || []; // IDs only, would need mapping to names if desired
+
                 return {
                     id: d.id,
                     title: d.title,
@@ -39,8 +45,8 @@ export default function Calendar() {
                     month: date.getMonth(),
                     year: date.getFullYear(),
                     time: time,
-                    location: "Estúdio Avaloon", // Placeholder or fetch from briefing_data
-                    crew: [] // Placeholder
+                    location: location,
+                    crew: crew
                 };
             });
             setEvents(mappedEvents);
@@ -88,7 +94,8 @@ export default function Calendar() {
                             <ChevronRight className="w-5 h-5" />
                         </button>
                     </div>
-                    <ButtonAvaloon variant="primary" onClick={() => setShowDemandForm(true)}>
+                    {/* Changed to open ShootForm specifically per user request */}
+                    <ButtonAvaloon variant="primary" onClick={() => setShowShootForm(true)}>
                         <Plus className="w-4 h-4" /> Nova Filmagem
                     </ButtonAvaloon>
                 </div>
@@ -326,11 +333,41 @@ export default function Calendar() {
                             className="fixed inset-y-0 right-0 w-full max-w-md bg-[#111121] border-l border-[#2d2d42] z-50 shadow-2xl"
                         >
                             <DemandForm
-                                type="SHOOT"
+                                type="GENERIC"
                                 onClose={() => setShowDemandForm(false)}
                                 onSuccess={() => {
                                     loadEvents();
                                     setShowDemandForm(false);
+                                }}
+                            />
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
+            {/* Shoot Form Modal (Media Day specific) */}
+            <AnimatePresence>
+                {showShootForm && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowShootForm(false)}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        />
+                        <motion.div
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed inset-y-0 right-0 w-full max-w-md bg-[#111121] border-l border-[#2d2d42] z-50 shadow-2xl"
+                        >
+                            <ShootForm
+                                onClose={() => setShowShootForm(false)}
+                                onSuccess={() => {
+                                    loadEvents();
+                                    setShowShootForm(false);
                                 }}
                             />
                         </motion.div>
