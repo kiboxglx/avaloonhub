@@ -13,7 +13,7 @@ const COLUMNS = [
     { id: "DONE", title: "Concluído", color: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" },
 ];
 
-export const KanbanBoard = ({ tasks = [], onTaskUpdate }) => {
+export const KanbanBoard = ({ tasks = [], onTaskUpdate, onAddDemand }) => {
 
     const moveTask = async (taskId, newStatus) => {
         // Optimistic update could happen here in parent, but for now we just call API
@@ -109,7 +109,9 @@ export const KanbanBoard = ({ tasks = [], onTaskUpdate }) => {
                             ))}
                         </AnimatePresence>
 
-                        <button className="w-full py-2 rounded-lg border border-dashed border-[#2d2d42] text-[#9595c6] text-xs font-medium hover:border-avaloon-orange/50 hover:text-white transition-colors flex items-center justify-center gap-2">
+                        <button
+                            onClick={onAddDemand}
+                            className="w-full py-2 rounded-lg border border-dashed border-[#2d2d42] text-[#9595c6] text-xs font-medium hover:border-avaloon-orange/50 hover:text-white transition-colors flex items-center justify-center gap-2">
                             <Plus className="w-3 h-3" /> Adicionar
                         </button>
                     </div>

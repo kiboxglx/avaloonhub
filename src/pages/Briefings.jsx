@@ -79,7 +79,11 @@ export default function Briefings() {
 
             <div className="flex-1 overflow-hidden min-h-[600px] flex flex-col">
                 {view === 'board' && (
-                    <KanbanBoard tasks={demands} onTaskUpdate={loadDemands} />
+                    <KanbanBoard
+                        tasks={demands}
+                        onTaskUpdate={loadDemands}
+                        onAddDemand={() => setShowNewDemandForm(true)}
+                    />
                 )}
 
                 {view === 'list' && (
