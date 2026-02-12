@@ -59,6 +59,33 @@ export const dataService = {
             if (error) throw error;
         }
     },
+    team: {
+        getAll: async () => {
+            const { data, error } = await supabase
+                .from('team_members')
+                .select('*')
+                .order('name');
+            if (error) throw error;
+            return data;
+        },
+        create: async (member) => {
+            const { data, error } = await supabase
+                .from('team_members')
+                .insert([member])
+                .select();
+            if (error) throw error;
+            return data[0];
+        },
+        update: async (id, updates) => {
+            const { data, error } = await supabase
+                .from('team_members')
+                .update(updates)
+                .eq('id', id)
+                .select();
+            if (error) throw error;
+            return data[0];
+        }
+    },
     services: {
         getAll: async () => {
             const { data, error } = await supabase

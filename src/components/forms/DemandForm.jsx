@@ -5,7 +5,7 @@ import { ButtonAvaloon } from "@/components/ui/ButtonAvaloon";
 import { X, Calendar, Clock, Save, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
-export function DemandForm({ onClose, onSuccess }) {
+export function DemandForm({ onClose, onSuccess, type = 'GENERIC' }) {
     const [clients, setClients] = useState([]);
     const [services, setServices] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -17,7 +17,8 @@ export function DemandForm({ onClose, onSuccess }) {
         service_id: "",
         scheduled_date: "",
         scheduled_time: "",
-        briefing_notes: ""
+        briefing_notes: "",
+        platform: "Instagram" // Default for content
     });
 
     useEffect(() => {
@@ -52,11 +53,13 @@ export function DemandForm({ onClose, onSuccess }) {
                 client_id: formData.client_id,
                 service_id: formData.service_id,
                 scheduled_at: fullDate.toISOString(),
-                status: 'TODO',
+                status: type === 'CONTENT' ? 'IDEA' : 'TODO', // Default status depends on type
                 priority: 'Medium',
+                type: type, // Use the prop
                 briefing_data: {
                     notes: formData.briefing_notes,
-                    original_time_input: formData.scheduled_time
+                    original_time_input: formData.scheduled_time,
+                    platform: type === 'CONTENT' ? formData.platform : undefined
                 }
             };
 
@@ -130,6 +133,22 @@ export function DemandForm({ onClose, onSuccess }) {
                                     ))}
                                 </select>
                             </div>
+                            {type === 'CONTENT' && (
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-medium text-slate-400 mb-1">Plataforma</label>
+                                    <select
+                                        className="w-full bg-[#1e1e2d] border border-[#2d2d42] rounded-lg p-3 text-white focus:border-avaloon-orange outline-none"
+                                        value={formData.platform}
+                                        onChange={e => setFormData({ ...formData, platform: e.target.value })}
+                                    >
+                                        <option value="Instagram">Instagram</option>
+                                        <option value="TikTok">TikTok</option>
+                                        <option value="LinkedIn">LinkedIn</option>
+                                        <option value="YouTube">YouTube</option>
+                                        <option value="Facebook">Facebook</option>
+                                    </select>
+                                </div>
+                            )}
                         </div>
 
                         {/* Date & Time */}

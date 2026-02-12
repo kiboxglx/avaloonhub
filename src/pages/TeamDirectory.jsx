@@ -1,94 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Bell, Settings, ChevronRight, Download, Plus, Search,
     LayoutGrid, List, SlidersHorizontal, MapPin, ChevronDown,
     Video, Aperture, Home, Plane, Clock, Mic, Headphones,
-    Lightbulb, Monitor, HardDrive, Hammer, Film, Wand2
+    Lightbulb, Monitor, HardDrive, Hammer, Film, Wand2, X
 } from "lucide-react";
-import { motion } from "framer-motion";
-
-const TEAM_MEMBERS = [
-    {
-        id: 1,
-        name: "Sarah Jenkins",
-        role: "Lead Videographer",
-        location: "Studio A, London",
-        status: "On-Set",
-        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150&h=150",
-        specialties: ["Steadicam", "4K Cinema", "Directing"],
-        kit: [
-            { icon: Video, name: "Sony FX6 Cinema Line" },
-            { icon: Aperture, name: "GM 24-70mm f/2.8" }
-        ],
-        lastActive: "Just now"
-    },
-    {
-        id: 2,
-        name: "Davide Russo",
-        role: "Drone Operator",
-        location: "Remote / On-Call",
-        status: "Available",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150&h=150",
-        specialties: ["Aerial Photog", "FPV Racing"],
-        kit: [
-            { icon: Plane, name: "DJI Mavic 3 Cine" }
-        ],
-        lastActive: "2h ago"
-    },
-    {
-        id: 3,
-        name: "Elena Rodriguez",
-        role: "Sound Engineer",
-        location: "Returns Monday",
-        status: "Offline",
-        avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=150&h=150",
-        specialties: ["Field Recording", "Post-Prod"],
-        kit: [
-            { icon: Mic, name: "Zoom F8n Pro" },
-            { icon: Headphones, name: "Sennheiser MKH 416" }
-        ],
-        lastActive: "2d ago"
-    },
-    {
-        id: 4,
-        name: "Marcus Chen",
-        role: "Lighting Director",
-        location: "Downtown Set B",
-        status: "On-Set",
-        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150&h=150",
-        specialties: ["Gaffer", "DMX Control"],
-        kit: [
-            { icon: Lightbulb, name: "Aputure 600d Pro" }
-        ],
-        lastActive: "5m ago"
-    },
-    {
-        id: 5,
-        name: "Jessica Lee",
-        role: "Editor / Colorist",
-        location: "Home Studio",
-        status: "Available",
-        avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=150&h=150",
-        specialties: ["DaVinci Resolve", "VFX", "Motion Graphics"],
-        kit: [
-            { icon: Monitor, name: "Mac Studio M2 Ultra" }
-        ],
-        lastActive: "10m ago"
-    },
-    {
-        id: 6,
-        name: "Alex Thompson",
-        role: "Grip",
-        location: "Exterior Location D",
-        status: "On-Set",
-        avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=150&h=150",
-        specialties: ["Dolly Ops", "Rigging"],
-        kit: [
-            { icon: Hammer, name: "Standard Grip Truck" }
-        ],
-        lastActive: "4h ago"
-    }
-];
+import { motion, AnimatePresence } from "framer-motion";
+import { dataService } from "@/services/dataService";
+import { TeamForm } from "@/components/forms/TeamForm"; // Ensure path is correct
 
 const StatusBadge = ({ status }) => {
     if (status === "On-Set") {
@@ -122,8 +41,46 @@ const StatusBadge = ({ status }) => {
 };
 
 export default function TeamDirectory() {
+    const [members, setMembers] = useState([]);
+    const [showTeamForm, setShowTeamForm] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    const loadTeam = async () => {
+        try {
+            setLoading(true);
+            const data = await dataService.team.getAll();
+            // Transform data if needed, or ensure DB schema matches UI expectations.
+            // DB has 'kit' as JSONB. UI expects array of objects with icon (Function) and name.
+            // We need to map the stored kit names back to icons if we want icons.
+            const mappedData = data.map(m => ({
+                ...m,
+                kit: Array.isArray(m.kit) ? m.kit : [], // Ensure kit is array
+                specialties: Array.isArray(m.specialties) ? m.specialties : []
+            }));
+            setMembers(mappedData);
+        } catch (error) {
+            console.error("Failed to load team:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadTeam();
+    }, []);
+
+    // Helper to get icon for kit item name
+    const getKitIcon = (name) => {
+        if (name.includes('Camera') || name.includes('Cinema')) return Video;
+        if (name.includes('Drone') || name.includes('Mavic')) return Plane;
+        if (name.includes('Light') || name.includes('Iluminação')) return Lightbulb;
+        if (name.includes('Edit') || name.includes('Monitor') || name.includes('Mac')) return Monitor;
+        if (name.includes('Mic') || name.includes('Audio')) return Mic;
+        return Hammer; // Default
+    };
+
     return (
-        <div className="flex flex-col w-full h-full">
+        <div className="flex flex-col w-full h-full relative">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
                 <div className="flex flex-col gap-2">
@@ -142,7 +99,10 @@ export default function TeamDirectory() {
                         <Download className="w-5 h-5" />
                         <span>Export</span>
                     </button>
-                    <button className="flex h-10 items-center gap-2 px-4 rounded-lg bg-avaloon-orange text-white text-sm font-bold shadow-lg shadow-orange-500/20 hover:opacity-90 transition-all hover:scale-[1.02]">
+                    <button
+                        onClick={() => setShowTeamForm(true)}
+                        className="flex h-10 items-center gap-2 px-4 rounded-lg bg-avaloon-orange text-white text-sm font-bold shadow-lg shadow-orange-500/20 hover:opacity-90 transition-all hover:scale-[1.02]"
+                    >
                         <Plus className="w-5 h-5" />
                         <span>Add Member</span>
                     </button>
@@ -191,89 +151,130 @@ export default function TeamDirectory() {
                                 <Wand2 className="w-4 h-4 text-[#9595c6] group-hover:text-avaloon-orange" />
                                 Color Grading
                             </button>
-                            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-transparent border border-dashed border-[#9595c6] text-sm font-medium text-[#9595c6] hover:text-white hover:border-white transition-all">
-                                <SlidersHorizontal className="w-4 h-4" />
-                                More Filters
-                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Grid View (Masonry) */}
-            <div className="masonry-grid columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
-                {TEAM_MEMBERS.map((member) => (
-                    <motion.div
-                        key={member.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="break-inside-avoid mb-6"
-                    >
-                        <div className="bg-[#1e1e2d] border border-[#2d2d42] rounded-xl p-5 hover:border-avaloon-orange/40 hover:shadow-lg hover:shadow-avaloon-orange/5 transition-all group relative overflow-hidden">
+            {loading ? (
+                <div className="text-center py-20 text-slate-500">
+                    <div className="animate-pulse">Loading team...</div>
+                </div>
+            ) : (
+                <div className="masonry-grid columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
+                    {members.map((member) => (
+                        <motion.div
+                            key={member.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="break-inside-avoid mb-6"
+                        >
+                            <div className="bg-[#1e1e2d] border border-[#2d2d42] rounded-xl p-5 hover:border-avaloon-orange/40 hover:shadow-lg hover:shadow-avaloon-orange/5 transition-all group relative overflow-hidden">
 
-                            {/* Status Badge Positioned Top Right */}
-                            <div className="absolute top-0 right-0 p-3">
-                                <StatusBadge status={member.status} />
-                            </div>
-
-                            {/* Header Info */}
-                            <div className="flex items-start gap-4 mb-4">
-                                <div className="relative">
-                                    <div
-                                        className={`size-16 rounded-full bg-cover bg-center ring-2 ring-[#2d2d42] group-hover:ring-avaloon-orange/40 transition-all ${member.status === 'Offline' ? 'grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100' : ''}`}
-                                        style={{ backgroundImage: `url("${member.avatar}")` }}
-                                    ></div>
+                                {/* Status Badge Positioned Top Right */}
+                                <div className="absolute top-0 right-0 p-3">
+                                    <StatusBadge status={member.status} />
                                 </div>
-                                <div className="pt-1">
-                                    <h3 className="text-white font-bold text-lg leading-tight">{member.name}</h3>
-                                    <p className="text-avaloon-orange text-sm font-medium">{member.role}</p>
-                                    <div className="flex items-center gap-1 mt-1 text-[#9595c6] text-xs">
-                                        <MapPin className="w-3.5 h-3.5" />
-                                        <span>{member.location}</span>
+
+                                {/* Header Info */}
+                                <div className="flex items-start gap-4 mb-4">
+                                    <div className="relative">
+                                        <div
+                                            className={`size-16 rounded-full bg-cover bg-center ring-2 ring-[#2d2d42] group-hover:ring-avaloon-orange/40 transition-all ${member.status === 'Offline' ? 'grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100' : ''}`}
+                                            style={{ backgroundImage: `url("${member.avatar_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(member.name)}")` }}
+                                        ></div>
                                     </div>
-                                </div>
-                            </div>
-
-                            {/* Details */}
-                            <div className="space-y-3">
-                                <div>
-                                    <p className="text-[11px] uppercase tracking-wider text-[#9595c6] font-bold mb-2">Specialties</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {member.specialties.map((spec) => (
-                                            <span key={spec} className="px-2 py-1 rounded-md bg-[#252546] text-xs text-white border border-white/5">
-                                                {spec}
-                                            </span>
-                                        ))}
+                                    <div className="pt-1">
+                                        <h3 className="text-white font-bold text-lg leading-tight">{member.name}</h3>
+                                        <p className="text-avaloon-orange text-sm font-medium">{member.role}</p>
+                                        <div className="flex items-center gap-1 mt-1 text-[#9595c6] text-xs">
+                                            <MapPin className="w-3.5 h-3.5" />
+                                            <span>{member.location}</span>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="pt-3 border-t border-[#2d2d42]">
-                                    <div className="flex items-center justify-between group/gear cursor-pointer">
-                                        <p className="text-[11px] uppercase tracking-wider text-[#9595c6] font-bold">Current Kit</p>
-                                        <ChevronDown className="w-4 h-4 text-[#9595c6] group-hover/gear:text-white transition-colors" />
+                                {/* Details */}
+                                <div className="space-y-3">
+                                    <div>
+                                        <p className="text-[11px] uppercase tracking-wider text-[#9595c6] font-bold mb-2">Specialties</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {member.specialties && member.specialties.map((spec) => (
+                                                <span key={spec} className="px-2 py-1 rounded-md bg-[#252546] text-xs text-white border border-white/5">
+                                                    {spec}
+                                                </span>
+                                            ))}
+                                            {(!member.specialties || member.specialties.length === 0) && (
+                                                <span className="text-xs text-slate-600 italic">No specialties listed</span>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="mt-2 text-sm text-gray-400">
-                                        {member.kit.map((k, i) => (
-                                            <div key={i} className="flex items-center gap-2 mb-1">
-                                                <k.icon className="w-4 h-4 text-avaloon-orange" />
-                                                <span>{k.name}</span>
-                                            </div>
-                                        ))}
+
+                                    <div className="pt-3 border-t border-[#2d2d42]">
+                                        <div className="flex items-center justify-between group/gear cursor-pointer">
+                                            <p className="text-[11px] uppercase tracking-wider text-[#9595c6] font-bold">Current Kit</p>
+                                            <ChevronDown className="w-4 h-4 text-[#9595c6] group-hover/gear:text-white transition-colors" />
+                                        </div>
+                                        <div className="mt-2 text-sm text-gray-400">
+                                            {member.kit && member.kit.map((k, i) => {
+                                                const Icon = getKitIcon(k.name);
+                                                return (
+                                                    <div key={i} className="flex items-center gap-2 mb-1">
+                                                        <Icon className="w-4 h-4 text-avaloon-orange" />
+                                                        <span>{k.name}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                            {(!member.kit || member.kit.length === 0) && (
+                                                <span className="text-xs text-slate-600 italic">No kit listed</span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Footer */}
-                            <div className="mt-4 pt-4 border-t border-[#2d2d42] flex justify-between items-center">
-                                <span className="text-xs text-[#9595c6]">Last active: {member.lastActive}</span>
-                                <button className="text-xs font-bold text-white bg-[#252546] hover:bg-avaloon-orange hover:text-white px-3 py-1.5 rounded transition-colors">
-                                    View Profile
-                                </button>
+                                {/* Footer */}
+                                <div className="mt-4 pt-4 border-t border-[#2d2d42] flex justify-between items-center">
+                                    <span className="text-xs text-[#9595c6]">Last active: {member.lastActive || 'Recently'}</span>
+                                    <button className="text-xs font-bold text-white bg-[#252546] hover:bg-avaloon-orange hover:text-white px-3 py-1.5 rounded transition-colors">
+                                        View Profile
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    </motion.div>
-                ))}
-            </div>
+                        </motion.div>
+                    ))}
+                </div>
+            )}
+
+            {/* Team Form Modal */}
+            <AnimatePresence>
+                {showTeamForm && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowTeamForm(false)}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        />
+                        <motion.div
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed inset-y-0 right-0 w-full max-w-md bg-[#111121] border-l border-[#2d2d42] z-50 shadow-2xl"
+                        >
+                            <TeamForm
+                                onClose={() => setShowTeamForm(false)}
+                                onSuccess={() => {
+                                    loadTeam();
+                                    setShowTeamForm(false);
+                                }}
+                            />
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
