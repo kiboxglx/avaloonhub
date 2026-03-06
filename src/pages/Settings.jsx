@@ -206,7 +206,10 @@ export default function Settings() {
                             <span className="mt-1 inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-avaloon-orange/20 text-avaloon-orange border border-avaloon-orange/30">{role || "admin"}</span>
                         </div>
 
-                        {TABS.map(tab => {
+                        {TABS.filter(tab => {
+                            if (role !== 'admin' && (tab.id === 'goals' || tab.id === 'workspace')) return false;
+                            return true;
+                        }).map(tab => {
                             const Icon = tab.icon;
                             return (
                                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}

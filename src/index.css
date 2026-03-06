@@ -13,26 +13,47 @@
     --text-main: #ffffff;
     --text-muted: #a1a1aa;
     --text-dim: #64748b;
+
+    /* Fluid Typography & Spacing */
+    --text-xs: clamp(0.7rem, 0.65rem + 0.2vw, 0.75rem);
+    --text-sm: clamp(0.8rem, 0.75rem + 0.25vw, 0.875rem);
+    --text-base: clamp(0.95rem, 0.9rem + 0.25vw, 1rem);
+    --text-lg: clamp(1.1rem, 1rem + 0.5vw, 1.25rem);
+    --text-xl: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
+    --text-2xl: clamp(1.5rem, 1.3rem + 1vw, 2rem);
+
+    --spacing-1: 0.25rem;
+    /* 4px */
+    --spacing-2: 0.5rem;
+    /* 8px */
+    --spacing-4: 1rem;
+    /* 16px */
+
+    scroll-behavior: smooth;
   }
 
   [data-theme='light'] {
     --base-bg: #f8fafc;
     --base-card: #ffffff;
-    --base-border: #e2e8f0;
+    --base-border: #cbd5e1;
+    /* Mais visível */
     --base-card-hover: #f1f5f9;
-    --text-main: #0f172a;
-    --text-muted: #475569;
-    --text-dim: #94a3b8;
+    --text-main: #020617;
+    /* Quase preto para máximo contraste */
+    --text-muted: #334155;
+    /* Mais escuro para ser legível */
+    --text-dim: #64748b;
+    /* Cinza equilibrado */
   }
 
   [data-theme='red'] {
     --base-bg: #1a0505;
     --base-card: #2a0a0a;
-    --base-border: #4a1515;
+    --base-border: #5d1a1a;
     --base-card-hover: #3d1010;
-    --text-main: #fecaca;
-    --text-muted: #fca5a5;
-    --text-dim: #ef4444;
+    --text-main: #fff1f1;
+    --text-muted: #fecaca;
+    --text-dim: #f87171;
   }
 
   body,

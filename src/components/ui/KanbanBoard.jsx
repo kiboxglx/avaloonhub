@@ -149,11 +149,11 @@ export const KanbanBoard = ({
     };
 
     return (
-        <div className="flex gap-4 overflow-x-auto pb-6 h-full min-h-[500px]">
+        <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-6 h-full min-h-[500px] scrollbar-hide">
             {COLUMNS.map(col => {
                 const colTasks = tasks.filter(t => t.status === col.id);
                 return (
-                    <div key={col.id} className="min-w-[280px] w-full flex-1 flex flex-col">
+                    <div key={col.id} className="min-w-[85vw] md:min-w-[300px] w-full flex-1 flex flex-col snap-center px-1">
                         {/* Column Header */}
                         <div className={cn("flex items-center justify-between p-3 rounded-t-xl mb-3 backdrop-blur-md border", col.color)}>
                             <h3 className="font-bold text-sm uppercase tracking-wider">{col.title}</h3>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { ButtonAvaloon } from "@/components/ui/ButtonAvaloon";
-import { ChevronLeft, ChevronRight, Plus, Clock, MapPin, Loader2, X, Clock3, Calendar as CalendarIcon, Layout } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Clock, MapPin, Loader2, X, Clock3, Calendar as CalendarIcon, Layout, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { dataService } from "@/services/dataService";
 import { DemandForm } from "@/components/forms/DemandForm";
@@ -22,13 +22,21 @@ export default function Calendar() {
     const [showDemandForm, setShowDemandForm] = useState(false);
     const [selectedArea, setSelectedArea] = useState(null);
     const [filterArea, setFilterArea] = useState("ALL");
+    const [filterMember, setFilterMember] = useState("ALL");
+    const [teamMembers, setTeamMembers] = useState([]);
 
     // Extracted to useCallback so it can be called both from useEffect AND from onSuccess callbacks
     const loadEvents = useCallback(async () => {
         setIsLoading(true);
         try {
-            const data = await dataService.demands.getAll();
-            const mapped = data
+            const [demandsData, teamData] = await Promise.all([
+                dataService.demands.getAll(),
+                dataService.team.getAll()
+            ]);
+
+            setTeamMembers(teamData || []);
+
+            const mapped = (demandsData || [])
                 .filter(d => d.scheduled_at) // skip demands with no date
                 .map(d => {
                     const date = new Date(d.scheduled_at);
@@ -45,6 +53,7 @@ export default function Calendar() {
                         isoStart: d.scheduled_at,
                         duration: d.briefing_data?.duration_hours || 1,
                         location: d.briefing_data?.location || null,
+                        assigneeId: d.assigned_to,
                         assigneeName: d.assignee?.name || "Sem Responsável",
                         assigneeAvatar: d.assignee?.avatar_url || null,
                         isPending: d.status === 'TODO' && d.briefing_data?.is_accepted === false,
@@ -53,7 +62,7 @@ export default function Calendar() {
                 });
             setEvents(mapped);
         } catch (err) {
-            console.error("Erro ao carregar eventos:", err);
+            console.error("Erro ao carregar dados do calendário:", err);
         } finally {
             setIsLoading(false);
         }
@@ -66,7 +75,11 @@ export default function Calendar() {
     const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
 
-    const visibleEvents = filterArea === "ALL" ? events : events.filter(e => e.area === filterArea);
+    const visibleEvents = events.filter(e => {
+        const matchesArea = filterArea === "ALL" || e.area === filterArea;
+        const matchesMember = filterMember === "ALL" || e.assigneeId === filterMember;
+        return matchesArea && matchesMember;
+    });
 
     const handleAreaSelected = (area) => {
         setSelectedArea(area);
@@ -113,6 +126,21 @@ export default function Calendar() {
                     <p className="text-muted">Planejamento central de demandas por área.</p>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
+                    {/* Member Filter Dropdown */}
+                    <div className="flex items-center gap-2 bg-card rounded-lg p-1 border border-border min-w-[48px]">
+                        <Users className="w-3.5 h-3.5 text-dim ml-2" />
+                        <select
+                            value={filterMember}
+                            onChange={(e) => setFilterMember(e.target.value)}
+                            className="bg-transparent border-none text-[10px] md:text-xs font-bold text-main outline-none max-w-[80px] md:max-w-none pr-6 py-1 cursor-pointer focus:ring-0"
+                        >
+                            <option value="ALL" className="bg-[#1a1a1a]">Filtro Equipe</option>
+                            {teamMembers.map(m => (
+                                <option key={m.id} value={m.id} className="bg-[#1a1a1a]">{m.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
                     {/* View Switcher */}
                     <div className="flex items-center gap-1 bg-card rounded-lg p-1 border border-border mr-2">
                         <button
@@ -183,8 +211,8 @@ export default function Calendar() {
                 <div className="flex-1 overflow-hidden flex flex-col">
                     {viewMode === 'month' ? (
                         <div className="flex-1 grid grid-cols-7 gap-px bg-[#1a1a1a] border border-border rounded-xl shadow-2xl overflow-hidden">
-                            {["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"].map(d => (
-                                <div key={d} className="bg-card py-3 text-center text-xs font-bold text-dim tracking-widest">{d}</div>
+                            {["D", "S", "T", "Q", "Q", "S", "S"].map(d => (
+                                <div key={d} className="bg-card py-3 text-center text-[10px] md:text-xs font-bold text-dim tracking-widest">{d}</div>
                             ))}
 
                             {Array.from({ length: firstDayOfMonth }).map((_, i) => (
@@ -262,10 +290,14 @@ export default function Calendar() {
                         </div>
                     ) : (
                         /* Weekly View */
-                        <div className="flex-1 grid grid-cols-7 gap-px bg-[#1a1a1a] border border-border rounded-xl shadow-2xl overflow-hidden">
-                            {["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"].map(d => (
-                                <div key={d} className="bg-card py-3 text-center text-xs font-bold text-dim tracking-widest">{d}</div>
-                            ))}
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-7 gap-3 md:gap-px bg-transparent md:bg-[#1a1a1a] md:border md:border-border rounded-xl md:shadow-2xl overflow-y-auto md:overflow-hidden scrollbar-hide pb-20 md:pb-0">
+                            {/* Header row hidden on mobile list view */}
+                            <div className="hidden md:contents">
+                                {["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"].map(d => (
+                                    <div key={d} className="bg-card py-3 text-center text-xs font-bold text-dim tracking-widest border-b border-border">{d}</div>
+                                ))}
+                            </div>
+
                             {weekDays.map((date, idx) => {
                                 const isToday = date.toDateString() === new Date().toDateString();
                                 const dayEvents = visibleEvents.filter(e =>
@@ -274,11 +306,14 @@ export default function Calendar() {
                                     e.year === date.getFullYear()
                                 );
 
+                                // Only show empty days in desktop layout, or if it's today on mobile
+                                if (dayEvents.length === 0 && !isToday && window.innerWidth < 768) return null;
+
                                 return (
                                     <div
                                         key={idx}
                                         onClick={() => setSelectedDayEvents({ day: date.getDate(), events: dayEvents })}
-                                        className={`bg-card min-h-[400px] p-4 cursor-pointer group hover:bg-[#1f1f1f] transition-colors flex flex-col relative ${isToday ? "ring-1 ring-inset ring-avaloon-orange/60 shadow-[inset_0_0_20px_rgba(236,91,19,0.05)]" : ""}`}
+                                        className={`bg-card md:min-h-[400px] p-4 rounded-xl md:rounded-none border border-border md:border-none cursor-pointer group hover:bg-[#1f1f1f] transition-colors flex flex-col relative ${isToday ? "ring-1 ring-inset ring-avaloon-orange/60 shadow-[inset_0_0_20px_rgba(236,91,19,0.05)]" : ""}`}
                                     >
                                         <div className="flex justify-between items-center mb-6">
                                             <div className="flex flex-col">

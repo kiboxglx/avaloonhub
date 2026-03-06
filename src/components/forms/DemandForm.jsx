@@ -12,7 +12,7 @@ import { logger } from "@/utils/logger";
 
 // ── Priority picker ───────────────────────────────────────────────────────────
 const PRIORITIES = [
-    { id: "Medium", label: "Média", icon: AlertCircle, color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/30" },
+    { id: "Medium", label: "Normal", icon: AlertCircle, color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/30" },
     { id: "High", label: "Alta", icon: Flame, color: "text-red-400", bg: "bg-red-500/10 border-red-500/30" },
 ];
 
@@ -107,6 +107,7 @@ function DesignFields({ data, onChange }) {
                     <select className={cls} value={data.media_type || "Digital"} onChange={e => onChange({ ...data, media_type: e.target.value })}>
                         <option value="Digital">Digital</option>
                         <option value="Impressa">Impressa</option>
+                        <option value="I.A">I.A</option>
                     </select>
                 </div>
                 <div>

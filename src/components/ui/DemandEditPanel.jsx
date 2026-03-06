@@ -166,7 +166,7 @@ export function DemandEditPanel({ demand, onClose, onUpdate }) {
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-avaloon-orange/50 transition-colors"
                                 >
                                     <option value="High" className="bg-[#1a1a1a]">Alta 🔥</option>
-                                    <option value="Medium" className="bg-[#1a1a1a]">Média ⚡</option>
+                                    <option value="Medium" className="bg-[#1a1a1a]">Normal ⚡</option>
                                 </select>
                             </div>
                         </div>
@@ -233,6 +233,7 @@ export function DemandEditPanel({ demand, onClose, onUpdate }) {
                                     >
                                         <option value="Digital" className="bg-[#1a1a1a]">Digital</option>
                                         <option value="Impressa" className="bg-[#1a1a1a]">Impressa</option>
+                                        <option value="I.A" className="bg-[#1a1a1a]">I.A</option>
                                     </select>
                                 </div>
                                 <div className="space-y-1.5">

@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Logo } from "@/components/ui/Logo";
 import { DemandNotificationWatcher } from "@/components/ui/DemandNotificationWatcher";
 import { NotificationCenter } from "@/components/ui/NotificationCenter";
+import { BottomNav } from "@/components/ui/BottomNav";
 
 // Prefetch map: when user hovers a nav link, start downloading that page's chunk.
 // Uses the same dynamic import as App.jsx lazy() — browser deduplicates and caches automatically.
@@ -47,7 +48,7 @@ const NAV_ITEMS = {
         { icon: Home, label: "Dashboard", path: "/dashboard" },
         { icon: Video, label: "Demandas", path: "/dashboard/briefings" },
         { icon: Calendar, label: "Agenda", path: "/dashboard/calendar" },
-        { icon: Users, label: "Perfil", path: "/dashboard/profile" },
+        { icon: Settings, label: "Config", path: "/dashboard/settings" },
     ],
     account_manager: [
         { icon: Home, label: "Dashboard", path: "/dashboard" },
@@ -57,25 +58,26 @@ const NAV_ITEMS = {
         { icon: Video, label: "Demandas", path: "/dashboard/briefings" },
         { icon: Users, label: "Equipe", path: "/dashboard/team" },
         { icon: BarChart3, label: "Relatórios", path: "/dashboard/reports" },
-        { icon: History, label: "Histórico", path: "/dashboard/activity" },
-        { icon: Palette, label: "Produtividade", path: "/dashboard/productivity" },
+        { icon: Settings, label: "Config", path: "/dashboard/settings" },
     ],
     designer: [
         { icon: Home, label: "Dashboard", path: "/dashboard" },
         { icon: Layers, label: "Pautas", path: "/dashboard/planning" },
         { icon: Palette, label: "Demandas", path: "/dashboard/briefings" },
         { icon: Calendar, label: "Prazos", path: "/dashboard/calendar" },
-        { icon: Users, label: "Perfil", path: "/dashboard/profile" },
+        { icon: Settings, label: "Config", path: "/dashboard/settings" },
     ],
     traffic: [
         { icon: Home, label: "Dashboard", path: "/dashboard" },
         { icon: TrendingUp, label: "Campanhas", path: "/dashboard/planning" },
         { icon: Video, label: "Demandas", path: "/dashboard/briefings" },
+        { icon: Briefcase, label: "Clientes", path: "/dashboard/clients" },
         { icon: BarChart3, label: "Relatórios", path: "/dashboard/reports" },
+        { icon: Settings, label: "Config", path: "/dashboard/settings" },
     ],
     viewer: [
         { icon: Home, label: "Dashboard", path: "/dashboard" },
-        { icon: Users, label: "Perfil", path: "/dashboard/profile" },
+        { icon: Settings, label: "Config", path: "/dashboard/settings" },
     ]
 };
 
@@ -97,8 +99,8 @@ export default function DashboardLayout() {
                     <Logo size="default" />
                 </div>
 
-                {/* Center Nav Links - REMOVED SCROLLBAR, ADDED WRAP */}
-                <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 w-full md:w-auto">
+                {/* Center Nav Links - HIDDEN ON MOBILE */}
+                <nav className="hidden md:flex flex-wrap items-center justify-center gap-x-4 gap-y-2 w-full md:w-auto">
                     {menuItems.map((item) => {
                         const isActive = location.pathname === item.path;
                         const prefetch = ROUTE_PREFETCH[item.path];
@@ -135,8 +137,8 @@ export default function DashboardLayout() {
                 </div>
             </header>
 
-            {/* Main Content */}
-            <main className="flex-1 flex flex-col w-full max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8">
+            {/* Main Content - ADDED PADDING FOR BOTTOM NAV ON MOBILE */}
+            <main className="flex-1 flex flex-col w-full max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={location.pathname}
@@ -153,6 +155,9 @@ export default function DashboardLayout() {
 
             {/* Injeta o observador de notificações de aceite de demanda para todo o Dashboard */}
             <DemandNotificationWatcher />
+
+            {/* Mobile Navigation Bar */}
+            <BottomNav />
         </div>
     );
 }

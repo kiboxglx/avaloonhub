@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import {
     Plus, LayoutTemplate, ListFilter, Folder, Save, Search, Loader2, X,
-    Flame, AlertCircle, Minus, CheckCircle2, Clock, BarChart2, ListTodo, Layers
+    Flame, AlertCircle, Minus, CheckCircle2, Clock, BarChart2, ListTodo, Layers, Users
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { dataService } from "@/services/dataService";
@@ -51,7 +51,7 @@ function KpiStrip({ demands }) {
     ];
 
     return (
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             {kpis.map(({ label, value, icon: Icon, color, bg }) => (
                 <div key={label} className={`${bg} border border-main/5 rounded-xl p-3 flex items-center gap-3`}>
                     <Icon className={`w-5 h-5 ${color} flex-shrink-0`} />
@@ -160,19 +160,37 @@ export default function Briefings() {
                 <div className="flex gap-2 flex-wrap items-center">
                     {/* Scope toggle — non-admins see "mine / all" */}
                     {!isAdmin && (
-                        <div className="flex items-center gap-2">
-                            {dateRange.start && (
-                                <div className="flex items-center gap-2 px-3 py-2 bg-avaloon-orange/10 border border-avaloon-orange/20 rounded-xl">
-                                    <span className="text-[10px] font-bold text-avaloon-orange uppercase">Período: 30 Dias</span>
-                                    <button
-                                        onClick={() => setDateRange({ start: null, end: null })}
-                                        className="text-avaloon-orange hover:text-white transition-colors"
-                                        title="Ver todo o histórico"
-                                    >
-                                        <X className="w-3 h-3" />
-                                    </button>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-xl">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] font-bold text-dim uppercase">De:</span>
+                                    <input
+                                        type="date"
+                                        value={dateRange.start}
+                                        onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                                        className="bg-transparent border-none text-[10px] font-bold text-main outline-none focus:ring-0 p-0"
+                                    />
                                 </div>
-                            )}
+                                <div className="w-px h-3 bg-border mx-1" />
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] font-bold text-dim uppercase">Até:</span>
+                                    <input
+                                        type="date"
+                                        value={dateRange.end}
+                                        onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                                        className="bg-transparent border-none text-[10px] font-bold text-main outline-none focus:ring-0 p-0"
+                                    />
+                                </div>
+                                {dateRange.start && (
+                                    <button
+                                        onClick={() => setDateRange({ start: "", end: "" })}
+                                        className="ml-2 text-dim hover:text-avaloon-orange transition-colors"
+                                        title="Limpar período"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
+                            </div>
                             <div className="flex bg-card rounded-lg p-1 border border-border">
                                 <button onClick={() => setMineOnly(true)}
                                     className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${mineOnly ? "bg-avaloon-orange/20 text-avaloon-orange" : "text-dim hover:text-main"}`}>
@@ -269,53 +287,98 @@ export default function Briefings() {
                         currentUserId={teamMemberId}
                     />
                 ) : view === "list" ? (
-                    <div className="overflow-auto flex-1 rounded-xl border border-border bg-card">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b border-border text-left bg-background">
-                                    {["Título", "Área", "Cliente", "Responsável", "Prioridade", "Status", "Data"].map(h => (
-                                        <th key={h} className="px-4 py-3 text-[11px] font-bold uppercase text-dim tracking-wider">{h}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredDemands.length === 0 ? (
-                                    <tr><td colSpan={7} className="text-center py-12 text-dim">Nenhuma demanda encontrada.</td></tr>
-                                ) : filteredDemands.map((d, i) => {
-                                    const areaCfg = AREA_CONFIG[d.area || "GENERIC"] || AREA_CONFIG.GENERIC;
-                                    const statusCfg = STATUS_CONFIG[d.status] || STATUS_CONFIG.TODO;
-                                    const avatarUrl = d.assignee?.avatar_url
-                                        || (d.assignee?.name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(d.assignee.name)}&background=1e1e2d&color=ec5b13&bold=true&size=32` : null);
-                                    return (
-                                        <motion.tr key={d.id}
-                                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
-                                            onClick={() => setSelectedDemand(d)}
-                                            className={`border-b border-border hover:bg-main/5 cursor-pointer transition-colors ${i % 2 !== 0 ? "bg-white/[0.02]" : ""}`}>
-                                            <td className="px-4 py-3 text-main font-medium max-w-[200px] truncate">{d.title}</td>
-                                            <td className="px-4 py-3">
-                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${areaCfg.bgColor} ${areaCfg.textColor}`}>{areaCfg.label}</span>
-                                            </td>
-                                            <td className="px-4 py-3 text-muted text-xs">{d.clients?.name || "—"}</td>
-                                            <td className="px-4 py-3">
-                                                {d.assignee ? (
-                                                    <div className="flex items-center gap-1.5">
-                                                        {avatarUrl && <img src={avatarUrl} className="w-5 h-5 rounded-full" alt="" />}
-                                                        <span className="text-xs text-slate-300">{d.assignee.name}</span>
-                                                    </div>
-                                                ) : <span className="text-slate-600 text-xs">—</span>}
-                                            </td>
-                                            <td className={`px-4 py-3 text-xs font-bold ${PRIORITY_COLOR[d.priority] || "text-muted"}`}>{d.priority || "—"}</td>
-                                            <td className="px-4 py-3">
-                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${statusCfg.bg} ${statusCfg.color}`}>{statusCfg.label}</span>
-                                            </td>
-                                            <td className="px-4 py-3 text-dim text-xs">
-                                                {d.scheduled_at ? format(new Date(d.scheduled_at), "dd/MM/yy", { locale: ptBR }) : "—"}
-                                            </td>
-                                        </motion.tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                    <div className="overflow-auto flex-1 flex flex-col gap-3">
+                        {/* Mobile View: Cards */}
+                        <div className="lg:hidden space-y-3">
+                            {filteredDemands.length === 0 ? (
+                                <div className="text-center py-12 text-dim bg-card border border-border rounded-xl">Nenhuma demanda encontrada.</div>
+                            ) : filteredDemands.map((d) => {
+                                const areaCfg = AREA_CONFIG[d.area || "GENERIC"] || AREA_CONFIG.GENERIC;
+                                const statusCfg = STATUS_CONFIG[d.status] || STATUS_CONFIG.TODO;
+                                return (
+                                    <motion.div
+                                        key={d.id}
+                                        onClick={() => setSelectedDemand(d)}
+                                        className="bg-card border border-border rounded-2xl p-4 flex flex-col gap-3 active:scale-[0.98] transition-transform"
+                                    >
+                                        <div className="flex justify-between items-start">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-1.5 h-10 rounded-full ${areaCfg.dot}`} />
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-main line-clamp-1">{d.title}</h4>
+                                                    <p className="text-[10px] text-dim uppercase font-bold tracking-wider">{d.clients?.name || "Cliente"}</p>
+                                                </div>
+                                            </div>
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${areaCfg.bgColor} ${areaCfg.textColor}`}>
+                                                {areaCfg.label}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center bg-background/50 rounded-xl p-2 mt-1">
+                                            <div className="flex items-center gap-2">
+                                                <div className="size-6 rounded-full bg-avaloon-orange/10 flex items-center justify-center">
+                                                    <Users className="w-3 h-3 text-avaloon-orange" />
+                                                </div>
+                                                <span className="text-xs text-slate-300">{d.assignee?.name || "Sem resp."}</span>
+                                            </div>
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${statusCfg.bg} ${statusCfg.color}`}>
+                                                {statusCfg.label}
+                                            </span>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Desktop View: Table */}
+                        <div className="hidden lg:block overflow-hidden rounded-xl border border-border bg-card">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b border-border text-left bg-background">
+                                        {["Título", "Área", "Cliente", "Responsável", "Prioridade", "Status", "Data"].map(h => (
+                                            <th key={h} className="px-4 py-3 text-[11px] font-bold uppercase text-dim tracking-wider">{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredDemands.length === 0 ? (
+                                        <tr><td colSpan={7} className="text-center py-12 text-dim">Nenhuma demanda encontrada.</td></tr>
+                                    ) : filteredDemands.map((d, i) => {
+                                        const areaCfg = AREA_CONFIG[d.area || "GENERIC"] || AREA_CONFIG.GENERIC;
+                                        const statusCfg = STATUS_CONFIG[d.status] || STATUS_CONFIG.TODO;
+                                        const avatarUrl = d.assignee?.avatar_url
+                                            || (d.assignee?.name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(d.assignee.name)}&background=1e1e2d&color=ec5b13&bold=true&size=32` : null);
+                                        return (
+                                            <motion.tr key={d.id}
+                                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
+                                                onClick={() => setSelectedDemand(d)}
+                                                className={`border-b border-border hover:bg-main/5 cursor-pointer transition-colors ${i % 2 !== 0 ? "bg-white/[0.02]" : ""}`}>
+                                                <td className="px-4 py-3 text-main font-medium max-w-[200px] truncate">{d.title}</td>
+                                                <td className="px-4 py-3">
+                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${areaCfg.bgColor} ${areaCfg.textColor}`}>{areaCfg.label}</span>
+                                                </td>
+                                                <td className="px-4 py-3 text-muted text-xs">{d.clients?.name || "—"}</td>
+                                                <td className="px-4 py-3">
+                                                    {d.assignee ? (
+                                                        <div className="flex items-center gap-1.5">
+                                                            {avatarUrl && <img src={avatarUrl} className="w-5 h-5 rounded-full" alt="" />}
+                                                            <span className="text-xs text-slate-300">{d.assignee.name}</span>
+                                                        </div>
+                                                    ) : <span className="text-slate-600 text-xs">—</span>}
+                                                </td>
+                                                <td className={`px-4 py-3 text-xs font-bold ${PRIORITY_COLOR[d.priority] || "text-muted"}`}>{d.priority || "—"}</td>
+                                                <td className="px-4 py-3">
+                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${statusCfg.bg} ${statusCfg.color}`}>{statusCfg.label}</span>
+                                                </td>
+                                                <td className="px-4 py-3 text-dim text-xs">
+                                                    {d.scheduled_at ? format(new Date(d.scheduled_at), "dd/MM/yy", { locale: ptBR }) : "—"}
+                                                </td>
+                                            </motion.tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 ) : (
                     /* Drive view */
