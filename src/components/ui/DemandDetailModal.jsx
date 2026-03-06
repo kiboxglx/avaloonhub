@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     X, Calendar, Clock, User, Briefcase, MapPin, Target, DollarSign,
     Smartphone, FileText, ArrowRight, CheckCircle2, Loader2, ExternalLink,
-    Video, Palette, TrendingUp, Users, Edit3, XCircle, Lock
+    Video, Palette, TrendingUp, Users, Edit3, XCircle, Lock, Trash2
 } from "lucide-react";
 import { AREA_CONFIG } from "@/components/ui/AreaSelector";
 import { dataService } from "@/services/dataService";
@@ -13,6 +13,7 @@ import { DemandEditPanel } from "@/components/ui/DemandEditPanel";
 import { useAuth } from "@/context/AuthContext";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const STATUSES = [
     { id: "TODO", label: "A Fazer", color: "bg-slate-500/20 text-muted border-slate-500/30" },
@@ -21,6 +22,8 @@ const STATUSES = [
     { id: "DONE", label: "Concluído", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
     { id: "rejected", label: "Recusada", color: "bg-red-500/20 text-red-400 border-red-500/30" },
 ];
+
+const PRIORITY_LABELS = { High: "Alta", Medium: "Normal", Low: "Baixa" };
 
 function DetailRow({ icon: Icon, label, value, accent }) {
     if (!value) return null;
@@ -45,7 +48,11 @@ const AREA_ICON = {
 
 export function DemandDetailModal({ demand, onClose, onUpdate }) {
     const { teamMemberId, teamMember } = useAuth();
+    const { can } = usePermissions();
+    const isAdmin = can("edit_team");
+
     const [isChangingStatus, setIsChangingStatus] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [currentStatus, setCurrentStatus] = useState(demand.status);
     const [showRejectionModal, setShowRejectionModal] = useState(false);
     const [showEditPanel, setShowEditPanel] = useState(false);
@@ -71,6 +78,22 @@ export function DemandDetailModal({ demand, onClose, onUpdate }) {
             console.error("Erro ao mudar status:", e);
         } finally {
             setIsChangingStatus(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!window.confirm("Tem certeza que deseja excluir esta demanda? Esta ação não pode ser desfeita.")) return;
+
+        setIsDeleting(true);
+        try {
+            await dataService.demands.delete(demand.id);
+            if (onUpdate) onUpdate();
+            onClose();
+        } catch (e) {
+            console.error("Erro ao excluir demanda:", e);
+            alert("Erro ao excluir demanda.");
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -182,7 +205,7 @@ export function DemandDetailModal({ demand, onClose, onUpdate }) {
                     <div className="bg-card rounded-xl border border-border p-4">
                         <p className="text-xs font-bold text-dim uppercase mb-3">Informações</p>
                         <DetailRow icon={Calendar} label="Data Agendada" value={scheduledDate} accent="text-avaloon-orange" />
-                        <DetailRow icon={Target} label="Prioridade" value={demand.priority} accent="text-yellow-400" />
+                        <DetailRow icon={Target} label="Prioridade" value={PRIORITY_LABELS[demand.priority] || demand.priority} accent="text-yellow-400" />
                         <DetailRow icon={User} label="Responsável" value={demand.profiles?.full_name} accent="text-blue-400" />
                     </div>
 
@@ -229,6 +252,18 @@ export function DemandDetailModal({ demand, onClose, onUpdate }) {
                     <ButtonAvaloon variant="tertiary" onClick={onClose} className="flex-1 justify-center">
                         Fechar
                     </ButtonAvaloon>
+
+                    {isAdmin && (
+                        <ButtonAvaloon
+                            type="button"
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="flex-1 justify-center bg-red-600/10 hover:bg-red-600/20 text-red-500 border-red-500/30 hover:border-red-500/50"
+                        >
+                            {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                            Excluir
+                        </ButtonAvaloon>
+                    )}
                     {/* Reject button — visible when demand is not already rejected/done */}
                     {currentStatus !== 'rejected' && currentStatus !== 'DONE' && (
                         <ButtonAvaloon

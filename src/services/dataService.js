@@ -407,6 +407,13 @@ export const dataService = {
                 .update({ status })
                 .eq('id', id);
             if (error) throw error;
+        },
+        delete: async (id) => {
+            const { error } = await supabase
+                .from('demands')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
         }
     },
     team: {

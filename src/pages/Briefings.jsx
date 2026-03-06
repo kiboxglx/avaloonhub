@@ -21,8 +21,7 @@ const ALL_AREAS = ["ALL", "VIDEOMAKER", "ACCOUNTS", "DESIGN", "TRAFFIC"];
 const PRIORITY_OPTIONS = [
     { id: "ALL", label: "Todas", icon: Layers },
     { id: "High", label: "Alta", icon: Flame, color: "text-red-400" },
-    { id: "Medium", label: "Média", icon: AlertCircle, color: "text-yellow-400" },
-    { id: "Low", label: "Baixa", icon: Minus, color: "text-muted" },
+    { id: "Medium", label: "Normal", icon: AlertCircle, color: "text-yellow-400" },
 ];
 
 const STATUS_CONFIG = {
@@ -32,7 +31,8 @@ const STATUS_CONFIG = {
     DONE: { label: "Concluído", color: "text-emerald-400", bg: "bg-emerald-500/10" },
 };
 
-const PRIORITY_COLOR = { High: "text-red-400", Medium: "text-yellow-400", Low: "text-muted" };
+const PRIORITY_COLOR = { High: "text-red-400", Medium: "text-yellow-400" };
+const PRIORITY_LABELS = { High: "Alta", Medium: "Normal", Low: "Baixa" };
 
 // ── KPI Strip ─────────────────────────────────────────────────────────────────
 function KpiStrip({ demands }) {
@@ -158,49 +158,49 @@ export default function Briefings() {
                     </p>
                 </div>
                 <div className="flex gap-2 flex-wrap items-center">
+                    {/* Period Filter — Always available */}
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-xl">
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-dim uppercase">De:</span>
+                            <input
+                                type="date"
+                                value={dateRange.start}
+                                onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                                className="bg-transparent border-none text-[10px] font-bold text-main outline-none focus:ring-0 p-0"
+                            />
+                        </div>
+                        <div className="w-px h-3 bg-border mx-1" />
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-dim uppercase">Até:</span>
+                            <input
+                                type="date"
+                                value={dateRange.end}
+                                onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                                className="bg-transparent border-none text-[10px] font-bold text-main outline-none focus:ring-0 p-0"
+                            />
+                        </div>
+                        {dateRange.start && (
+                            <button
+                                onClick={() => setDateRange({ start: "", end: "" })}
+                                className="ml-2 text-dim hover:text-avaloon-orange transition-colors"
+                                title="Limpar período"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                            </button>
+                        )}
+                    </div>
+
                     {/* Scope toggle — non-admins see "mine / all" */}
                     {!isAdmin && (
-                        <div className="flex flex-wrap items-center gap-2">
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-xl">
-                                <div className="flex items-center gap-1.5">
-                                    <span className="text-[10px] font-bold text-dim uppercase">De:</span>
-                                    <input
-                                        type="date"
-                                        value={dateRange.start}
-                                        onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                                        className="bg-transparent border-none text-[10px] font-bold text-main outline-none focus:ring-0 p-0"
-                                    />
-                                </div>
-                                <div className="w-px h-3 bg-border mx-1" />
-                                <div className="flex items-center gap-1.5">
-                                    <span className="text-[10px] font-bold text-dim uppercase">Até:</span>
-                                    <input
-                                        type="date"
-                                        value={dateRange.end}
-                                        onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                                        className="bg-transparent border-none text-[10px] font-bold text-main outline-none focus:ring-0 p-0"
-                                    />
-                                </div>
-                                {dateRange.start && (
-                                    <button
-                                        onClick={() => setDateRange({ start: "", end: "" })}
-                                        className="ml-2 text-dim hover:text-avaloon-orange transition-colors"
-                                        title="Limpar período"
-                                    >
-                                        <X className="w-3.5 h-3.5" />
-                                    </button>
-                                )}
-                            </div>
-                            <div className="flex bg-card rounded-lg p-1 border border-border">
-                                <button onClick={() => setMineOnly(true)}
-                                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${mineOnly ? "bg-avaloon-orange/20 text-avaloon-orange" : "text-dim hover:text-main"}`}>
-                                    Minhas
-                                </button>
-                                <button onClick={() => setMineOnly(false)}
-                                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${!mineOnly ? "bg-avaloon-orange/20 text-avaloon-orange" : "text-dim hover:text-main"}`}>
-                                    Todas
-                                </button>
-                            </div>
+                        <div className="flex bg-card rounded-lg p-1 border border-border">
+                            <button onClick={() => setMineOnly(true)}
+                                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${mineOnly ? "bg-avaloon-orange/20 text-avaloon-orange" : "text-dim hover:text-main"}`}>
+                                Minhas
+                            </button>
+                            <button onClick={() => setMineOnly(false)}
+                                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${!mineOnly ? "bg-avaloon-orange/20 text-avaloon-orange" : "text-dim hover:text-main"}`}>
+                                Todas
+                            </button>
                         </div>
                     )}
                     {/* View switch */}
@@ -366,7 +366,7 @@ export default function Briefings() {
                                                         </div>
                                                     ) : <span className="text-slate-600 text-xs">—</span>}
                                                 </td>
-                                                <td className={`px-4 py-3 text-xs font-bold ${PRIORITY_COLOR[d.priority] || "text-muted"}`}>{d.priority || "—"}</td>
+                                                <td className={`px-4 py-3 text-xs font-bold ${PRIORITY_COLOR[d.priority] || "text-muted"}`}>{PRIORITY_LABELS[d.priority] || d.priority || "—"}</td>
                                                 <td className="px-4 py-3">
                                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${statusCfg.bg} ${statusCfg.color}`}>{statusCfg.label}</span>
                                                 </td>
