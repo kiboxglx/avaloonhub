@@ -12,7 +12,6 @@ import { logger } from "@/utils/logger";
 
 // ── Priority picker ───────────────────────────────────────────────────────────
 const PRIORITIES = [
-    { id: "Low", label: "Baixa", icon: Minus, color: "text-muted", bg: "bg-slate-500/10 border-slate-500/30" },
     { id: "Medium", label: "Média", icon: AlertCircle, color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/30" },
     { id: "High", label: "Alta", icon: Flame, color: "text-red-400", bg: "bg-red-500/10 border-red-500/30" },
 ];
@@ -104,16 +103,22 @@ function DesignFields({ data, onChange }) {
         <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
                 <div>
-                    <label className="block text-xs font-bold text-muted uppercase mb-1.5 flex items-center gap-1"><Smartphone className="w-3 h-3" /> Plataforma</label>
-                    <select className={cls} value={data.platform || "Instagram"} onChange={e => onChange({ ...data, platform: e.target.value })}>
-                        {platforms.map(p => <option key={p}>{p}</option>)}
+                    <label className="block text-xs font-bold text-muted uppercase mb-1.5 flex items-center gap-1"><Smartphone className="w-3 h-3" /> Meio de Veiculação</label>
+                    <select className={cls} value={data.media_type || "Digital"} onChange={e => onChange({ ...data, media_type: e.target.value })}>
+                        <option value="Digital">Digital</option>
+                        <option value="Impressa">Impressa</option>
                     </select>
                 </div>
                 <div>
-                    <label className="block text-xs font-bold text-muted uppercase mb-1.5 flex items-center gap-1"><FileText className="w-3 h-3" /> Formato</label>
-                    <select className={cls} value={data.format || "Post Feed"} onChange={e => onChange({ ...data, format: e.target.value })}>
-                        {formats.map(f => <option key={f}>{f}</option>)}
-                    </select>
+                    <label className="block text-xs font-bold text-muted uppercase mb-1.5 flex items-center gap-1"><FileText className="w-3 h-3" /> Qtd. de Criativos</label>
+                    <input
+                        type="number"
+                        min={1}
+                        className={cls}
+                        placeholder="Ex: 5"
+                        value={data.creative_quantity || ""}
+                        onChange={e => onChange({ ...data, creative_quantity: e.target.value })}
+                    />
                 </div>
             </div>
             <div>
@@ -126,29 +131,49 @@ function DesignFields({ data, onChange }) {
 
 function TrafficFields({ data, onChange }) {
     const cls = "w-full bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-main focus:border-blue-500 outline-none";
+    const objective = data.campaign_objective || "SUBIR_CAMPANHAS";
+
     return (
         <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-                <div>
-                    <label className="block text-xs font-bold text-muted uppercase mb-1.5 flex items-center gap-1"><Smartphone className="w-3 h-3" /> Plataforma de Ads</label>
-                    <select className={cls} value={data.ads_platform || "Meta Ads"} onChange={e => onChange({ ...data, ads_platform: e.target.value })}>
-                        {["Meta Ads", "Google Ads", "TikTok Ads", "LinkedIn Ads", "Pinterest Ads"].map(p => <option key={p}>{p}</option>)}
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-xs font-bold text-muted uppercase mb-1.5 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Verba (R$)</label>
-                    <input type="number" min={0} className={cls} placeholder="0,00" value={data.budget || ""} onChange={e => onChange({ ...data, budget: e.target.value })} />
-                </div>
-            </div>
+            {/* 1. Objetivo (Sempre Primeiro) */}
             <div>
                 <label className="block text-xs font-bold text-muted uppercase mb-1.5 flex items-center gap-1"><Target className="w-3 h-3" /> Objetivo</label>
-                <select className={cls} value={data.campaign_objective || "ALCANCE"} onChange={e => onChange({ ...data, campaign_objective: e.target.value })}>
-                    {[["ALCANCE", "Alcance / Reconhecimento"], ["ENGAJAMENTO", "Engajamento"], ["TRAFEGO", "Tráfego para Site"], ["CONVERSAO", "Conversão / Vendas"], ["LEADS", "Geração de Leads"], ["AB_TEST", "Teste A/B"]].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                <select className={cls} value={objective} onChange={e => onChange({ ...data, campaign_objective: e.target.value })}>
+                    <option value="SALDO">Adição de Saldo</option>
+                    <option value="RELATORIO">Relatório do Tráfego</option>
+                    <option value="SUBIR_CAMPANHAS">Subir Campanhas</option>
                 </select>
             </div>
+
+            {/* Campos condicionais baseados no objetivo */}
+            {objective === "SUBIR_CAMPANHAS" && (
+                <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div>
+                        <label className="block text-xs font-bold text-muted uppercase mb-1.5 flex items-center gap-1"><Smartphone className="w-3 h-3" /> Plataforma</label>
+                        <select className={cls} value={data.ads_platform || "Meta Ads"} onChange={e => onChange({ ...data, ads_platform: e.target.value })}>
+                            {["Meta Ads", "Google Ads", "TikTok Ads", "LinkedIn Ads", "Pinterest Ads"].map(p => <option key={p}>{p}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-muted uppercase mb-1.5 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Verba (R$)</label>
+                        <input type="number" min={0} className={cls} placeholder="0,00" value={data.budget || ""} onChange={e => onChange({ ...data, budget: e.target.value })} />
+                    </div>
+                </div>
+            )}
+
+            {objective === "SALDO" && (
+                <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                    <label className="block text-xs font-bold text-muted uppercase mb-1.5 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Valor do Saldo (R$)</label>
+                    <input type="number" min={0} className={cls} placeholder="Digite o valor..." value={data.budget || ""} onChange={e => onChange({ ...data, budget: e.target.value })} />
+                </div>
+            )}
+
+            {/* Observações / Notas (Sempre visível exceto se não necessário, mas aqui deixamos para todos para briefing) */}
             <div>
-                <label className="block text-xs font-bold text-muted uppercase mb-1.5 flex items-center gap-1"><FileText className="w-3 h-3" /> Observações</label>
-                <textarea className={`${cls} h-20 resize-none`} placeholder="Público-alvo, KPIs esperados..." value={data.campaign_notes || ""} onChange={e => onChange({ ...data, campaign_notes: e.target.value })} />
+                <label className="block text-xs font-bold text-muted uppercase mb-1.5 flex items-center gap-1"><FileText className="w-3 h-3" />
+                    {objective === "RELATORIO" ? "Período / Detalhes do Relatório" : "Observações"}
+                </label>
+                <textarea className={`${cls} h-20 resize-none`} placeholder="Detalhes específicos para o gestor..." value={data.campaign_notes || ""} onChange={e => onChange({ ...data, campaign_notes: e.target.value })} />
             </div>
         </div>
     );

@@ -22,6 +22,11 @@ export function DemandEditPanel({ demand, onClose, onUpdate }) {
         briefing_notes: demand.briefing_data?.notes || "",
     });
 
+    const [areaData, setAreaData] = useState({
+        media_type: demand.briefing_data?.media_type || "Digital",
+        creative_quantity: demand.briefing_data?.creative_quantity || "",
+    });
+
     useEffect(() => {
         async function loadOptions() {
             try {
@@ -63,6 +68,7 @@ export function DemandEditPanel({ demand, onClose, onUpdate }) {
                 briefing_data: {
                     ...demand.briefing_data,
                     notes: formData.briefing_notes,
+                    ...areaData,
                 }
             };
 
@@ -161,7 +167,6 @@ export function DemandEditPanel({ demand, onClose, onUpdate }) {
                                 >
                                     <option value="High" className="bg-[#1a1a1a]">Alta 🔥</option>
                                     <option value="Medium" className="bg-[#1a1a1a]">Média ⚡</option>
-                                    <option value="Low" className="bg-[#1a1a1a]">Baixa 🧊</option>
                                 </select>
                             </div>
                         </div>
@@ -213,6 +218,37 @@ export function DemandEditPanel({ demand, onClose, onUpdate }) {
                             </div>
                         </div>
                     </div>
+
+                    {/* Design Specific Fields */}
+                    {demand.area === "DESIGN" && (
+                        <div className="space-y-4 pt-4 border-t border-white/5">
+                            <p className="text-[10px] font-bold text-dim uppercase tracking-widest text-green-400">Detalhes de Design</p>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-400 ml-1">Meio de Veiculação</label>
+                                    <select
+                                        value={areaData.media_type}
+                                        onChange={(e) => setAreaData(prev => ({ ...prev, media_type: e.target.value }))}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-green-500 transition-colors"
+                                    >
+                                        <option value="Digital" className="bg-[#1a1a1a]">Digital</option>
+                                        <option value="Impressa" className="bg-[#1a1a1a]">Impressa</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-400 ml-1">Qtd. de Criativos</label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        value={areaData.creative_quantity}
+                                        onChange={(e) => setAreaData(prev => ({ ...prev, creative_quantity: e.target.value }))}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-green-500 transition-colors"
+                                        placeholder="Ex: 5"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Briefing Notes */}
                     <div className="space-y-4 pt-4 border-t border-white/5">

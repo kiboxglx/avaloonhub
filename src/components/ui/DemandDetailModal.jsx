@@ -203,8 +203,8 @@ export function DemandDetailModal({ demand, onClose, onUpdate }) {
                             {briefingData.agenda && <DetailRow icon={FileText} label="Pauta" value={briefingData.agenda} accent="text-purple-400" />}
 
                             {/* Design */}
-                            {briefingData.platform && <DetailRow icon={Smartphone} label="Plataforma" value={briefingData.platform} accent="text-green-400" />}
-                            {briefingData.format && <DetailRow icon={FileText} label="Formato" value={briefingData.format} accent="text-green-400" />}
+                            {briefingData.media_type && <DetailRow icon={Smartphone} label="Meio de Veiculação" value={briefingData.media_type} accent="text-green-400" />}
+                            {briefingData.creative_quantity && <DetailRow icon={FileText} label="Qtd. de Criativos" value={briefingData.creative_quantity} accent="text-green-400" />}
                             {briefingData.design_brief && <DetailRow icon={Edit3} label="Briefing da Arte" value={briefingData.design_brief} accent="text-green-400" />}
 
                             {/* Traffic */}
