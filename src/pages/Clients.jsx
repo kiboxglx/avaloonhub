@@ -399,8 +399,9 @@ function ClientPanel({ client, onClose, onUpdate }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function Clients() {
     const { teamMemberId } = useAuth();
-    const { can } = usePermissions();
+    const { can, role } = usePermissions();
     const isAdmin = can("manage_clients");
+    const canViewAll = can("view_clients");
 
     const [clients, setClients] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -413,8 +414,8 @@ export default function Clients() {
     const loadClients = async () => {
         try {
             setIsLoading(true);
-            // Admin vê todos; account_manager vê apenas os seus
-            const data = isAdmin
+            // Admin ou Tráfego vê todos; account_manager vê apenas os seus
+            const data = (isAdmin || role === 'traffic')
                 ? await dataService.clients.getAll()
                 : await dataService.clients.getByManager(teamMemberId);
             setClients(data || []);
@@ -446,7 +447,7 @@ export default function Clients() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-6">
                 <div>
                     <h1 className="text-main text-3xl md:text-4xl font-black tracking-tight">
-                        {isAdmin ? "Clientes" : "Meus Clientes"}
+                        {(isAdmin || role === 'traffic') ? "Clientes" : "Meus Clientes"}
                     </h1>
                     <p className="text-muted text-sm mt-1">
                         {isAdmin ? `${filteredClients.length} clientes no total` : "Seus clientes atribuídos"}

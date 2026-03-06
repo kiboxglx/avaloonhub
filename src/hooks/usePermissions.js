@@ -30,9 +30,11 @@ const PERMISSIONS = {
         "view_finance",
         "edit_kanban",
         "create_demands",
+        "view_clients",
     ],
     account_manager: [
         "manage_clients",
+        "view_clients",
         "approve_content",
         "view_reports",
         "export_data",
@@ -46,6 +48,11 @@ const PERMISSIONS = {
     ],
     videomaker: [
         "move_own_demands",
+    ],
+    traffic: [
+        "view_clients",
+        "view_reports",
+        "create_demands",
     ],
 };
 
