@@ -1,117 +1,181 @@
-import { useState } from "react";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, Legend, CartesianGrid } from "recharts";
-import { ArrowUpRight, ArrowDownRight, TrendingUp, Users, DollarSign, Activity, Video, Palette, Target, Award, Briefcase } from "lucide-react";
-import { ButtonAvaloon } from "@/components/ui/ButtonAvaloon";
+import { useState, useEffect } from "react";
+import {
+    AreaChart, Area, XAxis, YAxis, Tooltip, PieChart, Pie, Cell,
+    ResponsiveContainer, BarChart, Bar, Legend, CartesianGrid
+} from "recharts";
+import {
+    ArrowUpRight, TrendingUp, Users, Activity, Video, Palette, Target,
+    Award, Briefcase, Loader2, CheckCircle2, Clock, AlertTriangle
+} from "lucide-react";
+import { dataService } from "@/services/dataService";
+import { AREA_CONFIG } from "@/components/ui/AreaSelector";
 
-// --- Mock Data ---
-
-const REVENUE_DATA = [
-    { name: 'Jan', value: 125000 },
-    { name: 'Fev', value: 132000 },
-    { name: 'Mar', value: 145000 },
-    { name: 'Abr', value: 142000 },
-    { name: 'Mai', value: 158000 },
-    { name: 'Jun', value: 175000 },
-    { name: 'Jul', value: 189000 },
-];
-
-const PROD_DATA = [
-    { name: 'Jan', videos: 12, design: 45 },
-    { name: 'Fev', videos: 15, design: 52 },
-    { name: 'Mar', videos: 18, design: 48 },
-    { name: 'Abr', videos: 22, design: 60 },
-    { name: 'Mai', videos: 20, design: 65 },
-    { name: 'Jun', videos: 25, design: 72 },
-    { name: 'Jul', videos: 28, design: 80 },
-];
-
-const SECTOR_DATA = [
-    { name: 'Varejo', value: 35, color: '#F59E0B' },
-    { name: 'Tecnologia', value: 25, color: '#3B82F6' },
-    { name: 'Saúde', value: 20, color: '#10B981' },
-    { name: 'Serviços', value: 20, color: '#8B5CF6' },
-];
-
-const TEAM_PERFORMANCE = [
-    { name: 'João Silva', role: 'Videomaker', tasks: 22, rating: 4.8 },
-    { name: 'Maria Costa', role: 'Editora', tasks: 18, rating: 4.9 },
-    { name: 'Carlos Designer', role: 'Design', tasks: 45, rating: 4.7 },
-    { name: 'Ana Social', role: 'Gerente', tasks: 30, rating: 5.0 },
-];
-
-// --- Simple Card Component to avoid issues ---
+// ── Shared helpers ────────────────────────────────────────────────────────────
 const SimpleCard = ({ children, className }) => (
-    <div className={`bg-[#1e1e2d] border border-[#2d2d42] rounded-xl shadow-lg overflow-hidden ${className}`}>
+    <div className={`bg-card border border-border rounded-xl shadow-lg overflow-hidden ${className}`}>
         {children}
     </div>
 );
 
-const KPICard = ({ title, value, change, icon: Icon, color, subtext }) => {
+const TooltipStyle = {
+    contentStyle: { backgroundColor: '#000000', border: '1px solid #1a1a1a', borderRadius: '8px' },
+    itemStyle: { color: '#fff' },
+};
+
+const KPICard = ({ title, value, icon: Icon, color, subtext, loading }) => {
     const colorClasses = {
-        green: "text-green-500 bg-green-500/10 border-green-500/20",
-        blue: "text-blue-500 bg-blue-500/10 border-blue-500/20",
-        orange: "text-orange-500 bg-orange-500/10 border-orange-500/20",
-        purple: "text-purple-500 bg-purple-500/10 border-purple-500/20",
-        red: "text-red-500 bg-red-500/10 border-red-500/20"
+        green: "text-green-400 bg-green-500/10 border-green-500/20",
+        blue: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+        orange: "text-orange-400 bg-orange-500/10 border-orange-500/20",
+        purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
+        red: "text-red-400 bg-red-500/10 border-red-500/20",
     };
-
     const style = colorClasses[color] || colorClasses.blue;
-
     return (
         <SimpleCard className="p-6 relative">
-            <div className="flex justify-between items-start mb-4 relative z-10">
-                <div className={`p-3 rounded-xl border ${style}`}>
-                    <Icon className="w-6 h-6" />
+            <div className={`p-3 rounded-xl border w-fit mb-4 ${style}`}>
+                <Icon className="w-5 h-5" />
+            </div>
+            {loading ? (
+                <div className="animate-pulse space-y-2">
+                    <div className="h-8 w-24 bg-main/10 rounded" />
+                    <div className="h-3 w-16 bg-main/10 rounded" />
                 </div>
-                {change && (
-                    <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${change >= 0 ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}>
-                        {change > 0 && "+"}{change}%
-                        {change >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                    </div>
-                )}
-            </div>
-            <div className="relative z-10">
-                <h3 className="text-3xl font-bold text-white mb-1">{value}</h3>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">{title}</p>
-                {subtext && <p className="text-slate-500 text-[10px] mt-2">{subtext}</p>}
-            </div>
-
-            {/* Background Decoration */}
-            <div className={`absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-5 blur-2xl pointer-events-none ${style.split(' ')[0].replace('text-', 'bg-')}`}></div>
+            ) : (
+                <>
+                    <h3 className="text-3xl font-black text-main mb-1">{value ?? "—"}</h3>
+                    <p className="text-muted text-xs font-bold uppercase tracking-wider">{title}</p>
+                    {subtext && <p className="text-dim text-[10px] mt-1">{subtext}</p>}
+                </>
+            )}
         </SimpleCard>
     );
 };
 
+// ── Area colours for pie chart ────────────────────────────────────────────────
+const AREA_COLORS = {
+    VIDEOMAKER: "#ef4444",
+    ACCOUNTS: "#a855f7",
+    DESIGN: "#22c55e",
+    TRAFFIC: "#3b82f6",
+    GENERIC: "#6b7280",
+};
+
+const SECTOR_PALETTE = ["#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ec5b13", "#06b6d4", "#f43f5e"];
+
+// ── Recharts Custom Tooltip ───────────────────────────────────────────────────
+const ChartTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
+    return (
+        <div className="bg-background border border-border rounded-xl px-3 py-2 shadow-2xl text-xs">
+            {label && <p className="text-muted mb-1 font-bold">{label}</p>}
+            {payload.map((p, i) => (
+                <p key={i} className="font-bold" style={{ color: p.color || "#fff" }}>{p.name}: {p.value}</p>
+            ))}
+        </div>
+    );
+};
+
+// ── Data loading hook ─────────────────────────────────────────────────────────
+function useReportsData() {
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function load() {
+            setLoading(true);
+            try {
+                const [kpis, monthlyChart, allDemands, clients, team] = await Promise.all([
+                    dataService.dashboard.getKPIs(),
+                    dataService.dashboard.getDemandsPerMonth(),
+                    dataService.demands.getAll(),
+                    dataService.clients.getAll(),
+                    dataService.team.getAll(),
+                ]);
+
+                // Demands by area
+                const areaCount = {};
+                allDemands.forEach(d => {
+                    const a = d.area || "GENERIC";
+                    areaCount[a] = (areaCount[a] || 0) + 1;
+                });
+                const areaChartData = Object.entries(areaCount).map(([key, value]) => ({
+                    name: AREA_CONFIG[key]?.label || key,
+                    value,
+                    color: AREA_COLORS[key] || "#6b7280",
+                }));
+
+                // Demands by status
+                const statusCount = {};
+                allDemands.forEach(d => { statusCount[d.status] = (statusCount[d.status] || 0) + 1; });
+
+                // Client sectors
+                const sectorCount = {};
+                clients.forEach(c => { if (c.sector) sectorCount[c.sector] = (sectorCount[c.sector] || 0) + 1; });
+                const sectorData = Object.entries(sectorCount)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([name, value], i) => ({ name, value, color: SECTOR_PALETTE[i % SECTOR_PALETTE.length] }));
+
+                // Top clients by demand count
+                const clientDemandCount = {};
+                allDemands.forEach(d => {
+                    if (d.clients?.name) clientDemandCount[d.clients.name] = (clientDemandCount[d.clients.name] || 0) + 1;
+                });
+                const topClients = Object.entries(clientDemandCount)
+                    .sort((a, b) => b[1] - a[1]).slice(0, 5)
+                    .map(([name, value]) => ({ name, value }));
+
+                // Team leaderboard from production_records (proxy by demands assigned)
+                const teamLeaderboard = team.map(m => {
+                    const memberDemands = allDemands.filter(d => d.assigned_to === m.id || d.profiles?.full_name === m.name);
+                    return { name: m.name, role: m.role, tasks: memberDemands.length };
+                }).sort((a, b) => b.tasks - a.tasks).slice(0, 5);
+
+                setData({
+                    kpis, monthlyChart, areaChartData, sectorData, topClients,
+                    teamLeaderboard, statusCount,
+                    doneDemands: (allDemands.filter(d => d.status === 'DONE') || []).length,
+                    totalClients: clients.length,
+                    totalTeam: team.length,
+                });
+            } catch (e) {
+                console.error("Erro ao carregar relatórios:", e);
+            } finally {
+                setLoading(false);
+            }
+        }
+        load();
+    }, []);
+
+    return { data, loading };
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
 export default function Reports() {
     const [activeTab, setActiveTab] = useState("overview");
+    const { data, loading } = useReportsData();
+
+    const TABS = [
+        { id: "overview", label: "Visão Geral", icon: Activity },
+        { id: "production", label: "Produção", icon: Video },
+        { id: "clients", label: "Clientes", icon: Briefcase },
+        { id: "team", label: "Equipe", icon: Users },
+    ];
 
     return (
         <div className="space-y-8 pb-10 w-full">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
-                    <h1 className="text-4xl font-black text-white tracking-tight mb-2">
-                        Central de Inteligência
-                    </h1>
-                    <p className="text-[#9595c6]">
-                        Métricas estratégicas para tomada de decisão baseada em dados.
-                    </p>
+                    <h1 className="text-4xl font-black text-main tracking-tight mb-2">Central de Inteligência</h1>
+                    <p className="text-muted text-sm">Métricas reais da sua agência, atualizadas ao vivo.</p>
                 </div>
-                <div className="flex flex-wrap bg-[#1e1e2d] p-1 rounded-xl border border-[#2d2d42]">
-                    {[
-                        { id: 'overview', label: 'Visão Geral', icon: Activity },
-                        { id: 'finance', label: 'Financeiro', icon: DollarSign },
-                        { id: 'production', label: 'Produção', icon: Video },
-                        { id: 'team', label: 'Equipe', icon: Users },
-                    ].map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
+                <div className="flex flex-wrap bg-card p-1 rounded-xl border border-border gap-1">
+                    {TABS.map(tab => (
+                        <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === tab.id
-                                    ? "bg-avaloon-orange text-white shadow-lg shadow-avaloon-orange/20"
-                                    : "text-slate-400 hover:text-white hover:bg-white/5"
-                                }`}
-                        >
+                                ? "bg-avaloon-orange text-main shadow-lg shadow-avaloon-orange/20"
+                                : "text-muted hover:text-main hover:bg-main/5"}`}>
                             <tab.icon className="w-4 h-4" />
                             <span className="hidden md:inline">{tab.label}</span>
                         </button>
@@ -119,187 +183,262 @@ export default function Reports() {
                 </div>
             </div>
 
-            {/* Dashboard Content - Direct Rendering without Animation for Stability */}
             <div className="space-y-6">
-                {activeTab === 'overview' && (
+
+                {/* ── OVERVIEW ── */}
+                {activeTab === "overview" && (
                     <>
-                        {/* KPI Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <KPICard title="Faturamento Mensal" value="R$ 189.000" change={12.5} icon={DollarSign} color="green" subtext="Meta: R$ 200k" />
-                            <KPICard title="Novos Clientes" value="+8" change={5.2} icon={Users} color="blue" subtext="Total: 42 Ativos" />
-                            <KPICard title="Projetos Entregues" value="108" change={-2.4} icon={Target} color="purple" subtext="Vídeos + Design" />
-                            <KPICard title="Taxa de Cancelamento" value="1.2%" change={-0.5} icon={Activity} color="orange" subtext="Churn Rate Baixo" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                            <KPICard title="Demandas Ativas" value={data?.kpis?.activeDemands} icon={Activity} color="orange" loading={loading} subtext="em andamento agora" />
+                            <KPICard title="Concluídas no Mês" value={data?.kpis?.doneDemands} icon={CheckCircle2} color="green" loading={loading} subtext="entregues" />
+                            <KPICard title="Clientes Ativos" value={data?.totalClients ?? data?.kpis?.totalClients} icon={Briefcase} color="blue" loading={loading} />
+                            <KPICard title="Artes no Drive" value={data?.kpis?.totalArtes} icon={Palette} color="purple" loading={loading} subtext="arquivos este mês" />
                         </div>
 
-                        {/* Charts Row */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            {/* Monthly Demands Area Chart */}
                             <SimpleCard className="lg:col-span-2 p-6">
-                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                    <TrendingUp className="w-5 h-5 text-avaloon-orange" />
-                                    Crescimento Anual (MRR)
+                                <h3 className="text-xl font-bold text-main mb-6 flex items-center gap-2">
+                                    <TrendingUp className="w-5 h-5 text-avaloon-orange" /> Demandas por Mês
                                 </h3>
-                                <div className="h-[300px] w-full">
-                                    <ResponsiveContainer width="99%" height="100%">
-                                        <AreaChart data={REVENUE_DATA}>
-                                            <defs>
-                                                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#f97316" stopOpacity={0.3} />
-                                                    <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#2d2d42" vertical={false} />
-                                            <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                                            <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `R$${value / 1000}k`} />
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: '#111121', border: '1px solid #2d2d42', borderRadius: '8px' }}
-                                                itemStyle={{ color: '#fff' }}
-                                                formatter={(value) => [`R$ ${value.toLocaleString()}`, "Faturamento"]}
-                                            />
-                                            <Area type="monotone" dataKey="value" stroke="#f97316" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </div>
+                                {loading ? (
+                                    <div className="h-[260px] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-avaloon-orange" /></div>
+                                ) : (
+                                    <div className="h-[260px]">
+                                        <ResponsiveContainer width="99%" height="100%">
+                                            <AreaChart data={data?.monthlyChart || []}>
+                                                <defs>
+                                                    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#ec5b13" stopOpacity={0.3} />
+                                                        <stop offset="95%" stopColor="#ec5b13" stopOpacity={0} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />
+                                                <XAxis dataKey="name" stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} />
+                                                <YAxis stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                                                <Tooltip content={<ChartTooltip />} />
+                                                <Area type="monotone" dataKey="value" name="Demandas" stroke="#ec5b13" strokeWidth={3} fillOpacity={1} fill="url(#g1)" />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                )}
                             </SimpleCard>
 
-                            {/* Sector Distribution */}
+                            {/* Demands by Area donut */}
                             <SimpleCard className="p-6 flex flex-col">
-                                <h3 className="text-xl font-bold text-white mb-6">Distribuição por Setor</h3>
-                                <div className="flex-1 h-[200px] relative w-full">
-                                    <ResponsiveContainer width="99%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={SECTOR_DATA}
-                                                innerRadius={60}
-                                                outerRadius={80}
-                                                paddingAngle={5}
-                                                dataKey="value"
-                                            >
-                                                {SECTOR_DATA.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: '#111121', border: '1px solid #2d2d42', borderRadius: '8px' }}
-                                                itemStyle={{ color: '#fff' }}
-                                            />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                    {/* Center Text */}
-                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                        <div className="text-center">
-                                            <span className="block text-2xl font-bold text-white">42</span>
-                                            <span className="text-[10px] uppercase text-slate-500 font-bold">Clientes</span>
+                                <h3 className="text-xl font-bold text-main mb-4">Por Área</h3>
+                                {loading ? (
+                                    <div className="flex-1 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-avaloon-orange" /></div>
+                                ) : (
+                                    <>
+                                        <div className="h-[180px] relative">
+                                            <ResponsiveContainer width="99%" height="100%">
+                                                <PieChart>
+                                                    <Pie data={data?.areaChartData || []} innerRadius={55} outerRadius={75} paddingAngle={4} dataKey="value">
+                                                        {(data?.areaChartData || []).map((entry, i) => (
+                                                            <Cell key={i} fill={entry.color} stroke="none" />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip content={<ChartTooltip />} />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                <div className="text-center">
+                                                    <span className="block text-2xl font-black text-main">{data?.kpis?.totalDemands ?? 0}</span>
+                                                    <span className="text-[10px] uppercase text-dim font-bold">Total</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2 mt-4">
-                                    {SECTOR_DATA.map((item, i) => (
-                                        <div key={i} className="flex items-center gap-2 text-xs text-slate-400">
-                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
-                                            <span>{item.name} ({item.value}%)</span>
+                                        <div className="mt-4 space-y-2">
+                                            {(data?.areaChartData || []).map((item, i) => (
+                                                <div key={i} className="flex items-center justify-between text-xs">
+                                                    <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} /><span className="text-muted">{item.name}</span></div>
+                                                    <span className="text-main font-bold">{item.value}</span>
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
+                                    </>
+                                )}
                             </SimpleCard>
                         </div>
                     </>
                 )}
 
-                {activeTab === 'production' && (
+                {/* ── PRODUCTION ── */}
+                {activeTab === "production" && (
                     <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <KPICard title="Vídeos Produzidos" value="380" change={15} icon={Video} color="red" />
-                            <KPICard title="Artes Entregues" value="1.250" change={8} icon={Palette} color="purple" />
-                            <KPICard title="Projetos em Atraso" value="0" change={0} icon={Target} color="green" subtext="Meta: 0" />
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+                            {[
+                                { title: "Total Demandas", value: data?.kpis?.totalDemands, icon: Activity, color: "orange" },
+                                { title: "Videomaker", value: data?.areaChartData?.find(a => a.name === "Videomaker")?.value || 0, icon: Video, color: "red" },
+                                { title: "Design", value: data?.areaChartData?.find(a => a.name === "Design")?.value || 0, icon: Palette, color: "purple" },
+                                { title: "Concluídas", value: data?.doneDemands, icon: CheckCircle2, color: "green" },
+                            ].map(k => <KPICard key={k.title} {...k} loading={loading} />)}
                         </div>
 
                         <SimpleCard className="p-6">
-                            <h3 className="text-xl font-bold text-white mb-6">Produção Mensal (Vídeo vs Design)</h3>
-                            <div className="h-[350px] w-full">
-                                <ResponsiveContainer width="99%" height="100%">
-                                    <BarChart data={PROD_DATA}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#2d2d42" vertical={false} />
-                                        <XAxis dataKey="name" stroke="#94a3b8" axisLine={false} tickLine={false} />
-                                        <YAxis stroke="#94a3b8" axisLine={false} tickLine={false} />
-                                        <Tooltip
-                                            cursor={{ fill: '#ffffff05' }}
-                                            contentStyle={{ backgroundColor: '#111121', border: '1px solid #2d2d42', borderRadius: '8px' }}
-                                        />
-                                        <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                                        <Bar dataKey="videos" name="Vídeos" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                                        <Bar dataKey="design" name="Artes (Design)" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
+                            <h3 className="text-xl font-bold text-main mb-6">Demandas por Mês (últimos 6 meses)</h3>
+                            {loading ? (
+                                <div className="h-[300px] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-avaloon-orange" /></div>
+                            ) : (
+                                <div className="h-[300px]">
+                                    <ResponsiveContainer width="99%" height="100%">
+                                        <BarChart data={data?.monthlyChart || []} barSize={32}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />
+                                            <XAxis dataKey="name" stroke="#6b7280" axisLine={false} tickLine={false} fontSize={11} />
+                                            <YAxis stroke="#6b7280" axisLine={false} tickLine={false} fontSize={11} allowDecimals={false} />
+                                            <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
+                                            <Bar dataKey="value" name="Demandas" fill="#ec5b13" radius={[6, 6, 0, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            )}
                         </SimpleCard>
                     </div>
                 )}
 
-                {activeTab === 'team' && (
+                {/* ── CLIENTS ── */}
+                {activeTab === "clients" && (
                     <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Leaderboard */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <KPICard title="Total de Clientes" value={data?.kpis?.totalClients} icon={Briefcase} color="blue" loading={loading} />
+                            <KPICard title="Setores Únicos" value={data?.sectorData?.length || 0} icon={Target} color="orange" loading={loading} />
+                            <KPICard title="Artes Produzidas" value={data?.kpis?.totalArtes} icon={Palette} color="green" loading={loading} subtext="arquivos no Drive este mês" />
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Top Clients by Demands */}
                             <SimpleCard className="p-6">
-                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                    <Award className="w-5 h-5 text-yellow-500" />
-                                    Ranking de Produtividade
-                                </h3>
-                                <div className="space-y-4">
-                                    {TEAM_PERFORMANCE.sort((a, b) => b.tasks - a.tasks).map((member, i) => (
-                                        <div key={i} className="flex items-center gap-4 p-3 bg-[#111121] rounded-lg border border-[#2d2d42] relative overflow-hidden group hover:border-avaloon-orange/30 transition-colors">
-                                            <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${i === 0 ? "bg-yellow-500 text-black shadow-[0_0_10px_rgba(234,179,8,0.5)]" :
-                                                    i === 1 ? "bg-slate-300 text-black" :
-                                                        i === 2 ? "bg-orange-700 text-white" : "bg-[#2d2d42] text-slate-400"
-                                                }`}>
-                                                {i + 1}
-                                            </div>
-                                            <div className="flex-1">
-                                                <h4 className="font-bold text-white text-sm">{member.name}</h4>
-                                                <p className="text-xs text-slate-500">{member.role}</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <span className="block text-lg font-bold text-avaloon-orange">{member.tasks}</span>
-                                                <span className="text-[10px] uppercase text-slate-500 font-bold">Entregas</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                <h3 className="text-xl font-bold text-main mb-5">Top Clientes por Demandas</h3>
+                                {loading ? (
+                                    <div className="h-[200px] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-avaloon-orange" /></div>
+                                ) : (data?.topClients || []).length === 0 ? (
+                                    <div className="text-center py-8 text-dim">Nenhum dado ainda.</div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {(data?.topClients || []).map((c, i) => {
+                                            const maxVal = data.topClients[0]?.value || 1;
+                                            const pct = Math.round((c.value / maxVal) * 100);
+                                            return (
+                                                <div key={i}>
+                                                    <div className="flex justify-between text-sm mb-1">
+                                                        <span className="text-main font-medium">{c.name}</span>
+                                                        <span className="text-avaloon-orange font-bold">{c.value} demandas</span>
+                                                    </div>
+                                                    <div className="h-2 bg-[#1f1f1f] rounded-full overflow-hidden">
+                                                        <div className="h-full bg-gradient-to-r from-avaloon-orange to-red-500 rounded-full" style={{ width: `${pct}%` }} />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </SimpleCard>
 
-                            {/* Employee of Month Card */}
-                            <div className="bg-gradient-to-br from-avaloon-orange to-red-600 rounded-xl p-6 shadow-2xl relative overflow-hidden flex flex-col justify-between text-white border border-white/10">
-                                <div className="relative z-10">
-                                    <div className="flex items-center gap-2 mb-2 bg-white/20 w-fit px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
-                                        <Award className="w-4 h-4 text-white" />
-                                        <span className="text-xs font-bold uppercase tracking-wider">Destaque do Mês</span>
-                                    </div>
-                                    <h3 className="text-3xl font-black mb-1">Ana Social</h3>
-                                    <p className="text-white/80 font-medium mb-6">Gerente de Contas</p>
-
-                                    <div className="bg-black/20 backdrop-blur-md rounded-lg p-4 border border-white/10">
-                                        <p className="text-sm italic">"Ana superou todas as metas de engajamento e trouxe 3 novos clientes estratégicos este mês!"</p>
-                                    </div>
-                                </div>
-
-                                <div className="absolute right-0 bottom-0 opacity-20 transform translate-x-1/4 translate-y-1/4 pointer-events-none">
-                                    <Award className="w-64 h-64 text-white" />
-                                </div>
-                            </div>
+                            {/* Client Sectors Pie */}
+                            <SimpleCard className="p-6 flex flex-col">
+                                <h3 className="text-xl font-bold text-main mb-4">Distribuição por Setor</h3>
+                                {loading ? (
+                                    <div className="flex-1 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-avaloon-orange" /></div>
+                                ) : (data?.sectorData || []).length === 0 ? (
+                                    <div className="flex-1 flex items-center justify-center text-dim text-sm">Nenhum setor cadastrado.</div>
+                                ) : (
+                                    <>
+                                        <div className="h-[180px]">
+                                            <ResponsiveContainer width="99%" height="100%">
+                                                <PieChart>
+                                                    <Pie data={data.sectorData} innerRadius={50} outerRadius={70} paddingAngle={4} dataKey="value">
+                                                        {data.sectorData.map((e, i) => <Cell key={i} fill={e.color} stroke="none" />)}
+                                                    </Pie>
+                                                    <Tooltip content={<ChartTooltip />} />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2 mt-3">
+                                            {data.sectorData.map((s, i) => (
+                                                <div key={i} className="flex items-center gap-2 text-xs text-muted">
+                                                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
+                                                    <span>{s.name} ({s.value})</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </SimpleCard>
                         </div>
                     </div>
                 )}
 
-                {activeTab === 'finance' && (
-                    <div className="flex items-center justify-center h-[400px] bg-[#1e1e2d] border border-[#2d2d42] rounded-xl border-dashed">
-                        <div className="text-center">
-                            <DollarSign className="w-16 h-16 text-slate-600 mx-auto mb-4 opacity-50" />
-                            <h3 className="text-xl font-bold text-white">Módulo Financeiro Avançado</h3>
-                            <p className="text-slate-400 max-w-md mx-auto mt-2">
-                                Conecte suas contas bancárias ou integre com ERP para visualizar fluxo de caixa em tempo real.
-                            </p>
-                            <ButtonAvaloon className="mt-6" variant="primary">
-                                <Briefcase className="w-4 h-4" /> Configurar Integração
-                            </ButtonAvaloon>
+                {/* ── TEAM ── */}
+                {activeTab === "team" && (
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <KPICard title="Membros na Equipe" value={data?.kpis?.totalTeam} icon={Users} color="blue" loading={loading} />
+                            <KPICard title="Disponíveis Agora" value={data?.kpis?.availableTeam} icon={CheckCircle2} color="green" loading={loading} />
+                            <KPICard title="Demandas em Andamento" value={data?.kpis?.activeDemands} icon={Clock} color="orange" loading={loading} />
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Leaderboard */}
+                            <SimpleCard className="p-6">
+                                <h3 className="text-xl font-bold text-main mb-5 flex items-center gap-2">
+                                    <Award className="w-5 h-5 text-yellow-500" /> Ranking por Demandas
+                                </h3>
+                                {loading ? (
+                                    <div className="h-48 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-avaloon-orange" /></div>
+                                ) : (data?.teamLeaderboard || []).length === 0 ? (
+                                    <div className="text-center py-8 text-dim">Sem dados de equipe.</div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {data.teamLeaderboard.map((member, i) => (
+                                            <div key={i} className="flex items-center gap-4 p-3 bg-background rounded-xl border border-border hover:border-avaloon-orange/30 transition-colors">
+                                                <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm flex-shrink-0 ${i === 0 ? "bg-yellow-500 text-black" : i === 1 ? "bg-slate-300 text-black" : i === 2 ? "bg-orange-700 text-main" : "bg-[#1a1a1a] text-muted"
+                                                    }`}>{i + 1}</div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-bold text-main text-sm truncate">{member.name}</h4>
+                                                    <p className="text-xs text-dim">{member.role}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="block text-lg font-black text-avaloon-orange">{member.tasks}</span>
+                                                    <span className="text-[10px] uppercase text-dim font-bold">Demandas</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </SimpleCard>
+
+                            {/* Status breakdown */}
+                            <SimpleCard className="p-6">
+                                <h3 className="text-xl font-bold text-main mb-5">Demandas por Status</h3>
+                                {loading ? (
+                                    <div className="h-48 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-avaloon-orange" /></div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {[
+                                            { label: "A Fazer", key: "TODO", color: "bg-slate-500", track: "bg-slate-500/20" },
+                                            { label: "Em Produção", key: "DOING", color: "bg-blue-500", track: "bg-blue-500/20" },
+                                            { label: "Em Revisão", key: "REVIEW", color: "bg-orange-500", track: "bg-orange-500/20" },
+                                            { label: "Concluído", key: "DONE", color: "bg-emerald-500", track: "bg-emerald-500/20" },
+                                        ].map(({ label, key, color, track }) => {
+                                            const val = data?.statusCount?.[key] || 0;
+                                            const total = data?.kpis?.totalDemands || 1;
+                                            const pct = Math.round((val / total) * 100);
+                                            return (
+                                                <div key={key}>
+                                                    <div className="flex justify-between text-sm mb-1.5">
+                                                        <span className="text-slate-300 font-medium">{label}</span>
+                                                        <span className="text-main font-bold">{val} <span className="text-dim text-xs font-normal">({pct}%)</span></span>
+                                                    </div>
+                                                    <div className={`h-2 rounded-full overflow-hidden ${track}`}>
+                                                        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </SimpleCard>
                         </div>
                     </div>
                 )}

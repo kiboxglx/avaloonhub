@@ -1,8 +1,8 @@
 export const ButtonAvaloon = ({ children, variant = "primary", className, ...props }) => {
     const variants = {
-        primary: "bg-gradient-to-r from-[#ec5b13] to-[#ef4444] text-white shadow-lg shadow-orange-500/20 hover:scale-[1.02]",
-        outline: "border border-slate-700 bg-slate-900/50 text-white hover:bg-slate-800",
-        ghost: "text-slate-400 hover:text-white transition-colors"
+        primary: "bg-gradient-to-r from-[#ec5b13] to-[#ef4444] text-main shadow-lg shadow-orange-500/20 hover:scale-[1.02]",
+        outline: "border border-border bg-card text-main hover:bg-[#1a1a1a]",
+        ghost: "text-muted hover:text-main transition-colors"
     };
 
     return (

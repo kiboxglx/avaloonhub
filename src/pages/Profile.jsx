@@ -16,7 +16,7 @@ export default function Profile() {
                         className="w-32 h-32 rounded-xl border-4 border-slate-900 shadow-2xl"
                     />
                     <div className="flex-1 mb-2">
-                        <h2 className="text-3xl font-bold text-white">{user?.name}</h2>
+                        <h2 className="text-3xl font-bold text-main">{user?.name}</h2>
                         <span className="text-orange-500 font-semibold uppercase text-sm tracking-wider">
                             {role?.replace('_', ' ')}
                         </span>
@@ -29,29 +29,29 @@ export default function Profile() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <GlassCard className="p-6">
-                    <h3 className="text-xl font-bold text-white mb-4">Informações Pessoais</h3>
+                    <h3 className="text-xl font-bold text-main mb-4">Informações Pessoais</h3>
                     <div className="space-y-4">
                         <div>
-                            <label className="text-xs text-slate-500 uppercase font-bold">Email</label>
+                            <label className="text-xs text-dim uppercase font-bold">Email</label>
                             <p className="text-slate-200">{user?.email}</p>
                         </div>
                         <div>
-                            <label className="text-xs text-slate-500 uppercase font-bold">Telefone</label>
+                            <label className="text-xs text-dim uppercase font-bold">Telefone</label>
                             <p className="text-slate-200">+55 (11) 99999-9999</p>
                         </div>
                     </div>
                 </GlassCard>
 
                 <GlassCard className="p-6">
-                    <h3 className="text-xl font-bold text-white mb-4">Estatísticas</h3>
+                    <h3 className="text-xl font-bold text-main mb-4">Estatísticas</h3>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="p-4 rounded-lg bg-slate-800/50">
-                            <span className="text-2xl font-bold text-white">12</span>
-                            <p className="text-xs text-slate-400 uppercase">Projetos Ativos</p>
+                            <span className="text-2xl font-bold text-main">12</span>
+                            <p className="text-xs text-muted uppercase">Projetos Ativos</p>
                         </div>
                         <div className="p-4 rounded-lg bg-slate-800/50">
                             <span className="text-2xl font-bold text-emerald-400">98%</span>
-                            <p className="text-xs text-slate-400 uppercase">Pontualidade</p>
+                            <p className="text-xs text-muted uppercase">Pontualidade</p>
                         </div>
                     </div>
                 </GlassCard>

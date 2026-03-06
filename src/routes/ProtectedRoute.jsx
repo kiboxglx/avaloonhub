@@ -5,7 +5,7 @@ export default function ProtectedRoute({ allowedRoles = [] }) {
     const { user, role, loading } = useAuth();
 
     if (loading) {
-        return <div className="min-h-screen flex items-center justify-center bg-background text-white">Loading...</div>;
+        return <div className="min-h-screen flex items-center justify-center bg-background text-main">Loading...</div>;
     }
 
     if (!user) {
@@ -14,8 +14,8 @@ export default function ProtectedRoute({ allowedRoles = [] }) {
 
     // If user is logged in but hasn't selected a role, force them to select one
     // UNLESS they are already on the role selection page (handled by router config)
-    if (!role && window.location.pathname !== "/role-selection") {
-        return <Navigate to="/role-selection" replace />;
+    if (!role && window.location.pathname !== "/roles") {
+        return <Navigate to="/roles" replace />;
     }
 
     // If roles are specified, check if user has one of them

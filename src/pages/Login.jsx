@@ -1,38 +1,39 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { ButtonAvaloon } from "@/components/ui/ButtonAvaloon";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Input } from "@/components/ui/Input";
-import { Mail, Lock, AlertCircle } from "lucide-react";
+import { Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/ui/Logo";
 
 export default function Login() {
-    const [email, setEmail] = useState("admin@avaloon.com");
-    const [password, setPassword] = useState("123");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
-    const { login } = useAuth();
+    const { login, role } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
-        setLoading(true);
-
         if (!email.trim() || !password.trim()) {
-            setError("Por favor, preencha todos os campos");
-            setLoading(false);
+            setError("Preencha o email e a senha.");
             return;
         }
-
+        setLoading(true);
         try {
             await login(email.trim(), password.trim());
-            // Success -> Redirect to Role Selection
-            navigate("/roles");
+            // Navigation handled below after state settles — small delay lets resolveProfile finish
+            setTimeout(() => navigate("/roles"), 300);
         } catch (err) {
-            setError("Credenciais inválidas (tente admin@avaloon.com / 123)");
+            setError(
+                err.message?.includes("Invalid login")
+                    ? "Email ou senha inválidos."
+                    : err.message || "Erro ao entrar. Tente novamente."
+            );
         } finally {
             setLoading(false);
         }
@@ -40,24 +41,20 @@ export default function Login() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-            {/* Background Decor */}
-            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-background to-background opacity-50 pointer-events-none" />
+            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_#ec5b1333,_#000000_70%)] opacity-40 pointer-events-none" />
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-md relative z-10"
-            >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md relative z-10">
                 <GlassCard className="p-8 w-full">
                     <div className="flex flex-col items-center mb-8">
                         <Logo size="large" className="mb-2" />
-                        <p className="text-slate-400 text-sm mt-1">Faça login no seu workspace de produção</p>
+                        <p className="text-muted text-sm mt-1">Faça login no seu workspace de produção</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <Input
                             icon={Mail}
-                            placeholder="Endereço de Email"
+                            placeholder="Seu email de acesso"
+                            type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                         />
@@ -71,34 +68,29 @@ export default function Login() {
 
                         {error && (
                             <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                className="flex items-center gap-2 text-red-500 text-sm bg-red-500/10 p-3 rounded-lg border border-red-500/20"
-                            >
-                                <AlertCircle className="w-4 h-4" />
-                                {error}
+                                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+                                className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 p-3 rounded-xl border border-red-500/20">
+                                <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
                             </motion.div>
                         )}
 
-                        <div className="flex items-center justify-between text-sm">
-                            <label className="flex items-center gap-2 text-slate-400 cursor-pointer hover:text-white transition-colors">
-                                <input type="checkbox" className="rounded border-slate-700 bg-slate-800 text-avaloon-orange focus:ring-avaloon-orange" />
-                                Lembrar de mim
-                            </label>
-                            <a href="#" className="text-avaloon-orange hover:text-avaloon-red transition-colors font-medium">Esqueceu a senha?</a>
-                        </div>
-
-                        <ButtonAvaloon
-                            className="w-full h-11 text-lg"
-                            disabled={loading}
-                        >
-                            {loading ? "Entrando..." : "Entrar"}
+                        <ButtonAvaloon type="submit" className="w-full py-3" disabled={loading}>
+                            {loading ? "Entrando..." : "Entrar no Dashboard"}
                         </ButtonAvaloon>
+
+                        <div className="mt-6 pt-6 border-t border-main/5 text-center">
+                            <p className="text-dim text-sm">
+                                Novo na equipe?{" "}
+                                <Link to="/register" className="text-avaloon-orange font-bold hover:underline">
+                                    Criar conta
+                                </Link>
+                            </p>
+                        </div>
                     </form>
                 </GlassCard>
 
-                <div className="text-center mt-6 text-slate-500 text-xs">
-                    &copy; {new Date().getFullYear()} Avaloon Hub. Powered by Alpha Team.
+                <div className="text-center mt-6 text-slate-600 text-xs">
+                    © {new Date().getFullYear()} Avaloon Hub. Acesso restrito.
                 </div>
             </motion.div>
         </div>

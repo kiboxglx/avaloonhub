@@ -1,223 +1,213 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { ButtonAvaloon } from "@/components/ui/ButtonAvaloon";
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Clock, MapPin, Video, MonitorPlay, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Clock, MapPin, Loader2, X, Clock3, Calendar as CalendarIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { dataService } from "@/services/dataService";
 import { DemandForm } from "@/components/forms/DemandForm";
-import { ShootForm } from "@/components/forms/ShootForm";
+import { AreaSelector, AREA_CONFIG } from "@/components/ui/AreaSelector";
+import { buildGoogleCalendarUrl } from "@/utils/googleCalendar";
+
+
+const MONTH_NAMES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+const ALL_AREAS = ["ALL", "VIDEOMAKER", "ACCOUNTS", "DESIGN", "TRAFFIC", "GENERIC"];
 
 export default function Calendar() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDayEvents, setSelectedDayEvents] = useState(null);
-    const [events, setEvents] = useState([]); // Real events
+    const [events, setEvents] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [showAreaSelector, setShowAreaSelector] = useState(false);
     const [showDemandForm, setShowDemandForm] = useState(false);
-    const [showShootForm, setShowShootForm] = useState(false);
+    const [selectedArea, setSelectedArea] = useState(null);
+    const [filterArea, setFilterArea] = useState("ALL");
 
-    const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-
-    const loadEvents = async () => {
+    // Extracted to useCallback so it can be called both from useEffect AND from onSuccess callbacks
+    const loadEvents = useCallback(async () => {
         setIsLoading(true);
         try {
             const data = await dataService.demands.getAll();
-            const mappedEvents = data.map(d => {
-                const date = new Date(d.scheduled_at);
-                const time = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-                // Determine type based on explicit type or service name fallback
-                let type = d.type || 'MEETING';
-                if (!d.type && d.services?.name) {
-                    if (d.services.name.toLowerCase().includes('filmag') || d.services.name.toLowerCase().includes('shoot')) type = 'SHOOT';
-                    else if (d.services.name.toLowerCase().includes('edi') || d.services.name.toLowerCase().includes('post')) type = 'POST_PRODUCTION';
-                }
-
-                // If shoot form saves extra data in briefing_data, use it
-                const location = d.briefing_data?.location || "Estúdio Avaloon";
-                const crew = d.briefing_data?.crew_ids || []; // IDs only, would need mapping to names if desired
-
-                return {
-                    id: d.id,
-                    title: d.title,
-                    client: d.clients?.name || 'Cliente',
-                    type: type,
-                    day: date.getDate(),
-                    month: date.getMonth(),
-                    year: date.getFullYear(),
-                    time: time,
-                    location: location,
-                    crew: crew
-                };
-            });
-            setEvents(mappedEvents);
-        } catch (error) {
-            console.error("Error loading events:", error);
+            const mapped = data
+                .filter(d => d.scheduled_at) // skip demands with no date
+                .map(d => {
+                    const date = new Date(d.scheduled_at);
+                    return {
+                        id: d.id,
+                        title: d.title,
+                        client: d.clients?.name || "Cliente",
+                        area: d.area || "GENERIC",
+                        type: d.type || "GENERIC",
+                        day: date.getDate(),
+                        month: date.getMonth(),
+                        year: date.getFullYear(),
+                        time: date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+                        isoStart: d.scheduled_at,
+                        duration: d.briefing_data?.duration_hours || 1,
+                        location: d.briefing_data?.location || null,
+                        assigneeName: d.assignee?.name || "Sem Responsável",
+                        assigneeAvatar: d.assignee?.avatar_url || null,
+                        isPending: d.status === 'TODO' && d.briefing_data?.is_accepted === false,
+                        createdByName: d.briefing_data?.created_by_name || null,
+                    };
+                });
+            setEvents(mapped);
+        } catch (err) {
+            console.error("Erro ao carregar eventos:", err);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         loadEvents();
-    }, []);
+    }, [loadEvents]);
 
     const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
 
-    const prevMonth = () => {
-        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+    const visibleEvents = filterArea === "ALL" ? events : events.filter(e => e.area === filterArea);
+
+    const handleAreaSelected = (area) => {
+        setSelectedArea(area);
+        setShowAreaSelector(false);
+        setShowDemandForm(true);
     };
 
-    const nextMonth = () => {
-        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+    const getAreaDot = (area) => {
+        const cfg = AREA_CONFIG[area] || AREA_CONFIG.GENERIC;
+        return cfg.dot;
     };
 
     return (
         <div className="space-y-6 h-full flex flex-col relative">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div>
                     <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-                        Agenda de Produção
+                        Agenda da Agência
                     </h2>
-                    <p className="text-slate-400">Planejamento de filmagens e entregas.</p>
+                    <p className="text-muted">Planejamento central de demandas por área.</p>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 bg-[#1e1e2d] rounded-lg p-1 border border-[#2d2d42]">
-                        <button onClick={prevMonth} className="p-2 hover:bg-white/10 rounded-md transition-colors text-slate-400 hover:text-white">
+                <div className="flex items-center gap-3 flex-wrap">
+                    {/* Month Navigator */}
+                    <div className="flex items-center gap-2 bg-card rounded-lg p-1 border border-border">
+                        <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))} className="p-2 hover:bg-main/10 rounded-md text-muted hover:text-main transition-colors">
                             <ChevronLeft className="w-5 h-5" />
                         </button>
-                        <span className="min-w-[120px] text-center font-bold text-white">
-                            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                        <span className="min-w-[130px] text-center font-bold text-main">
+                            {MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}
                         </span>
-                        <button onClick={nextMonth} className="p-2 hover:bg-white/10 rounded-md transition-colors text-slate-400 hover:text-white">
+                        <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))} className="p-2 hover:bg-main/10 rounded-md text-muted hover:text-main transition-colors">
                             <ChevronRight className="w-5 h-5" />
                         </button>
                     </div>
-                    {/* Changed to open ShootForm specifically per user request */}
-                    <ButtonAvaloon variant="primary" onClick={() => setShowShootForm(true)}>
-                        <Plus className="w-4 h-4" /> Nova Filmagem
+                    <ButtonAvaloon variant="primary" onClick={() => setShowAreaSelector(true)}>
+                        <Plus className="w-4 h-4" /> Nova Ação
                     </ButtonAvaloon>
                 </div>
             </div>
 
-            {/* Legend */}
-            <div className="flex flex-wrap gap-4 text-xs font-bold text-slate-400 bg-[#1e1e2d] px-4 py-2 rounded-lg border border-[#2d2d42] w-fit shadow-sm">
-                <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
-                    <span>Gravação (SHOOT)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
-                    <span>Edição (POST)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-                    <span>Conteúdo (CONTENT)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-slate-500"></div>
-                    <span>Outros</span>
-                </div>
+            {/* Area Filter Legend */}
+            <div className="flex flex-wrap gap-2 items-center">
+                {ALL_AREAS.map(area => {
+                    const cfg = area === "ALL" ? { label: "Todos", textColor: "text-main", dot: "bg-white" } : AREA_CONFIG[area];
+                    const isActive = filterArea === area;
+                    return (
+                        <button
+                            key={area}
+                            onClick={() => setFilterArea(area)}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${isActive ? "bg-main/10 border-main/20 text-main" : "bg-card border-border text-muted hover:text-main"}`}
+                        >
+                            <div className={`w-2 h-2 rounded-full ${cfg?.dot || "bg-white"}`} />
+                            {cfg?.label || "Todos"}
+                        </button>
+                    );
+                })}
             </div>
 
-            {/* Calendar Grid - High Density Optimization */}
+            {/* Calendar Grid */}
             {isLoading ? (
-                <div className="flex-1 flex items-center justify-center bg-[#2d2d42]/50 border border-[#2d2d42] rounded-xl">
+                <div className="flex-1 flex items-center justify-center bg-[#1a1a1a]/50 border border-border rounded-xl">
                     <Loader2 className="w-10 h-10 animate-spin text-avaloon-orange" />
                 </div>
             ) : (
-                <div className="flex-1 grid grid-cols-7 grid-rows-6 gap-px bg-[#2d2d42] border border-[#2d2d42] rounded-xl shadow-2xl relative z-0">
-                    {/* Weekday Headers */}
-                    {["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"].map((day) => (
-                        <div key={day} className="bg-[#1e1e2d] py-3 text-center text-xs font-bold text-slate-500 tracking-widest">
-                            {day}
-                        </div>
+                <div className="flex-1 grid grid-cols-7 gap-px bg-[#1a1a1a] border border-border rounded-xl shadow-2xl overflow-hidden">
+                    {/* Weekday headers */}
+                    {["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"].map(d => (
+                        <div key={d} className="bg-card py-3 text-center text-xs font-bold text-dim tracking-widest">{d}</div>
                     ))}
 
-                    {/* Empty cells for padding */}
+                    {/* Empty offset cells */}
                     {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-                        <div key={`empty-${i}`} className="bg-[#111121]/80 min-h-[100px]" />
+                        <div key={`e-${i}`} className="bg-background/80 min-h-[100px]" />
                     ))}
 
-                    {/* Days */}
+                    {/* Day cells */}
                     {Array.from({ length: daysInMonth }).map((_, i) => {
                         const day = i + 1;
                         const isToday = day === new Date().getDate() && currentDate.getMonth() === new Date().getMonth() && currentDate.getFullYear() === new Date().getFullYear();
-
-                        // Filter events for this exact day (ignoring year for mock, but using year for real)
-                        const dayEvents = events.filter(e =>
-                            e.day === day &&
-                            e.month === currentDate.getMonth() &&
-                            e.year === currentDate.getFullYear()
-                        );
-
-                        const hasEvents = dayEvents.length > 0;
+                        const dayEvents = visibleEvents.filter(e => e.day === day && e.month === currentDate.getMonth() && e.year === currentDate.getFullYear());
 
                         return (
                             <div
                                 key={day}
                                 onClick={() => setSelectedDayEvents({ day, events: dayEvents })}
-                                className={`bg-[#1e1e2d] min-h-[100px] p-3 transition-colors cursor-pointer group hover:bg-[#252546] flex flex-col justify-between relative ${isToday ? 'bg-[#1e1e2d] ring-1 ring-inset ring-avaloon-orange/50' : ''
-                                    }`}
+                                className={`bg-card min-h-[100px] p-2 cursor-pointer group hover:bg-[#1f1f1f] transition-colors flex flex-col relative ${isToday ? "ring-1 ring-inset ring-avaloon-orange/60" : ""}`}
                             >
-                                {/* Hover Tooltip/Popover */}
-                                {hasEvents && (
-                                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-[#111121] border border-[#2d2d42] rounded-xl shadow-2xl p-3 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 invisible group-hover:visible">
-                                        <div className="text-xs font-bold text-white mb-2 border-b border-[#2d2d42] pb-1 flex justify-between">
-                                            <span>{day} de {monthNames[currentDate.getMonth()]}</span>
-                                            <span className="text-slate-500">{dayEvents.length} eventos</span>
-                                        </div>
-                                        <div className="space-y-2">
-                                            {dayEvents.slice(0, 5).map(e => (
-                                                <div key={e.id} className="flex items-start gap-2">
-                                                    <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${e.type === 'SHOOT' ? 'bg-red-500' :
-                                                        e.type === 'POST_PRODUCTION' ? 'bg-blue-500' :
-                                                            e.type === 'CONTENT' ? 'bg-green-500' : 'bg-slate-500'
-                                                        }`} />
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-[10px] text-slate-300 font-bold leading-tight truncate">{e.title}</p>
-                                                        <p className="text-[9px] text-slate-500 truncate">{e.time} • {e.client}</p>
+                                {/* Hover Tooltip */}
+                                {dayEvents.length > 0 && (
+                                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-60 bg-background border border-border rounded-xl shadow-2xl p-3 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 invisible group-hover:visible">
+                                        <p className="text-xs font-bold text-main mb-2 pb-1 border-b border-border">{day} de {MONTH_NAMES[currentDate.getMonth()]}</p>
+                                        {dayEvents.slice(0, 4).map(e => {
+                                            const cfg = AREA_CONFIG[e.area] || AREA_CONFIG.GENERIC;
+                                            const gcalLink = buildGoogleCalendarUrl({
+                                                title: `[${cfg.label}] ${e.title}`,
+                                                startDateIso: e.isoStart,
+                                                durationHours: e.duration,
+                                                location: e.location
+                                            });
+
+                                            return (
+                                                <div key={e.id} className="mb-2 p-1.5 rounded-lg bg-background/50 border border-border group/item">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
+                                                        <div>
+                                                            <p className="text-[10px] text-main font-bold truncate">{e.title}</p>
+                                                            <p className="text-[9px] text-dim">{e.time} ({e.duration}h) • {cfg.label}</p>
+                                                        </div>
                                                     </div>
+                                                    <a
+                                                        href={gcalLink}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="pl-3.5 text-[9px] text-blue-400 hover:text-blue-300 transition-colors opacity-0 group-hover/item:opacity-100 flex items-center gap-1"
+                                                    >
+                                                        <CalendarIcon className="w-2.5 h-2.5" /> Adicionar ao Google
+                                                    </a>
                                                 </div>
-                                            ))}
-                                            {dayEvents.length > 5 && (
-                                                <p className="text-[9px] text-center text-slate-500 italic">+ {dayEvents.length - 5} outros</p>
-                                            )}
-                                        </div>
-                                        {/* Arrow */}
-                                        <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#2d2d42]"></div>
+                                            );
+                                        })}
                                     </div>
                                 )}
 
-                                <div className="flex justify-between items-start">
-                                    <span className={`text-sm font-bold flex items-center justify-center w-7 h-7 rounded-full ${isToday ? 'bg-avaloon-orange text-white shadow-lg shadow-avaloon-orange/20' : 'text-slate-400 group-hover:text-white'
-                                        }`}>
-                                        {day}
-                                    </span>
-                                    {hasEvents && (
-                                        <span className="text-[10px] font-bold text-slate-500 bg-white/5 px-1.5 py-0.5 rounded">
-                                            {dayEvents.length}
-                                        </span>
-                                    )}
+                                {/* Day number */}
+                                <div className="flex justify-between items-start mb-1">
+                                    <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full ${isToday ? "bg-avaloon-orange text-main" : "text-muted group-hover:text-main"}`}>{day}</span>
+                                    {dayEvents.length > 0 && <span className="text-[10px] font-bold text-dim bg-main/5 px-1 rounded">{dayEvents.length}</span>}
                                 </div>
 
-                                {/* Event Indicators (Dots/Bars) */}
-                                <div className="space-y-1 mt-2">
-                                    {dayEvents.slice(0, 3).map((event, idx) => (
-                                        <div key={idx} className="flex items-center gap-1.5">
-                                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${event.type === 'SHOOT' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' :
-                                                event.type === 'POST_PRODUCTION' ? 'bg-blue-500' :
-                                                    event.type === 'CONTENT' ? 'bg-green-500' : 'bg-slate-500'
-                                                }`} />
-                                            <span className="text-[10px] font-medium text-slate-400 truncate w-full hidden lg:block group-hover:text-slate-200 transition-colors">
-                                                {event.title}
-                                            </span>
-                                        </div>
-                                    ))}
-                                    {dayEvents.length > 3 && (
-                                        <div className="text-[10px] text-slate-600 pl-1 font-bold">+ {dayEvents.length - 3} mais</div>
-                                    )}
+                                {/* Event dots/bars */}
+                                <div className="space-y-0.5 flex-1">
+                                    {dayEvents.slice(0, 3).map((ev, idx) => {
+                                        const cfg = AREA_CONFIG[ev.area] || AREA_CONFIG.GENERIC;
+                                        return (
+                                            <div key={idx} className="flex items-center gap-1">
+                                                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
+                                                <span className="text-[10px] text-muted truncate hidden lg:block group-hover:text-slate-200">{ev.title}</span>
+                                            </div>
+                                        );
+                                    })}
+                                    {dayEvents.length > 3 && <p className="text-[10px] text-slate-600 font-bold pl-2.5">+{dayEvents.length - 3} mais</p>}
                                 </div>
                             </div>
                         );
@@ -225,87 +215,87 @@ export default function Calendar() {
                 </div>
             )}
 
-            {/* Detailed Day Overlay */}
+            {/* Day Detail Modal */}
             <AnimatePresence>
                 {selectedDayEvents && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <motion.div
-                            key="overlay"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setSelectedDayEvents(null)}
-                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                        />
-                        <motion.div
-                            key="modal"
-                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                            className="relative bg-[#1e1e2d] border border-[#2d2d42] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[80vh] z-10"
-                        >
-                            {/* Header */}
-                            <div className="p-6 bg-[#111121] border-b border-[#2d2d42] flex justify-between items-start">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            onClick={() => setSelectedDayEvents(null)} className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
+                        <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }}
+                            className="relative bg-card border border-border rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[80vh] z-10">
+                            <div className="p-6 bg-background border-b border-border flex justify-between items-start">
                                 <div>
-                                    <h3 className="text-2xl font-bold text-white mb-1">
-                                        {selectedDayEvents.day} de {monthNames[currentDate.getMonth()]}
-                                    </h3>
-                                    <p className="text-slate-400 text-sm">
-                                        {selectedDayEvents.events.length > 0
-                                            ? `${selectedDayEvents.events.length} eventos para este dia`
-                                            : "Nenhum evento para este dia"}
-                                    </p>
+                                    <h3 className="text-2xl font-bold text-main">{selectedDayEvents.day} de {MONTH_NAMES[currentDate.getMonth()]}</h3>
+                                    <p className="text-muted text-sm">{selectedDayEvents.events.length > 0 ? `${selectedDayEvents.events.length} evento(s)` : "Nenhum evento"}</p>
                                 </div>
-                                <button
-                                    onClick={() => setSelectedDayEvents(null)}
-                                    className="p-2 bg-[#252546] rounded-full text-slate-400 hover:text-white hover:bg-red-500/20 hover:text-red-500 transition-all"
-                                >
-                                    <span className="sr-only">Fechar</span>
-                                    <Plus className="w-5 h-5 rotate-45" />
-                                </button>
+                                <div className="flex gap-2">
+                                    <ButtonAvaloon variant="primary" className="h-8 text-xs" onClick={() => { setSelectedDayEvents(null); setShowAreaSelector(true); }}>
+                                        <Plus className="w-3.5 h-3.5" /> Adicionar
+                                    </ButtonAvaloon>
+                                    <button onClick={() => setSelectedDayEvents(null)} className="p-2 bg-[#1f1f1f] rounded-full text-muted hover:text-main transition-colors">
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
-
-                            {/* Event List */}
-                            <div className="p-6 overflow-y-auto space-y-4">
+                            <div className="p-6 overflow-y-auto space-y-3">
                                 {selectedDayEvents.events.length > 0 ? (
-                                    selectedDayEvents.events.map((event) => (
-                                        <div key={event.id} className="relative pl-6 pb-2 group">
-                                            {/* Timeline Line */}
-                                            <div className="absolute left-0 top-2 bottom-0 w-px bg-[#2d2d42] group-last:hidden" />
-                                            <div className={`absolute left-[-4px] top-2 w-2.5 h-2.5 rounded-full border-2 border-[#1e1e2d] ${event.type === 'SHOOT' ? 'bg-red-500' :
-                                                event.type === 'POST_PRODUCTION' ? 'bg-blue-500' :
-                                                    event.type === 'CONTENT' ? 'bg-green-500' : 'bg-slate-500'
-                                                }`} />
-
-                                            <div className="bg-[#252546]/50 border border-[#2d2d42] rounded-xl p-4 hover:bg-[#252546] hover:border-avaloon-orange/30 transition-all">
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${event.type === 'SHOOT' ? 'bg-red-500/10 text-red-500' :
-                                                        event.type === 'POST_PRODUCTION' ? 'bg-blue-500/10 text-blue-500' :
-                                                            event.type === 'CONTENT' ? 'bg-green-500/10 text-green-500' : 'bg-slate-500/10 text-slate-500'
-                                                        }`}>
-                                                        {event.type}
-                                                    </span>
-                                                    <div className="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
-                                                        <Clock className="w-3.5 h-3.5" />
-                                                        {event.time}
-                                                    </div>
+                                    selectedDayEvents.events.map(ev => {
+                                        const cfg = AREA_CONFIG[ev.area] || AREA_CONFIG.GENERIC;
+                                        return (
+                                            <div key={ev.id} className={`border ${cfg.bgColor} rounded-xl p-4 relative group`}>
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${cfg.bgColor} ${cfg.textColor}`}>{cfg.label}</span>
+                                                    <span className="text-xs text-muted font-mono flex items-center gap-1"><Clock className="w-3 h-3" />{ev.time} ({ev.duration}h)</span>
                                                 </div>
+                                                <h4 className="text-main font-bold text-base mt-2">{ev.title}</h4>
 
-                                                <h4 className="text-white font-bold text-lg mb-1">{event.title}</h4>
-                                                <p className="text-sm text-slate-400 mb-2">Cliente: {event.client}</p>
-
-                                                <div className="flex items-center gap-4 text-sm text-slate-400 mt-3">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <MapPin className="w-4 h-4 text-slate-500" />
-                                                        <span>{event.location}</span>
+                                                {/* Pending confirmation badge */}
+                                                {ev.isPending && (
+                                                    <div className="flex items-center gap-1.5 text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-lg px-2.5 py-1.5 mb-2 text-xs font-bold w-fit">
+                                                        <Clock3 className="w-3.5 h-3.5 animate-pulse" />
+                                                        Aguardando Confirmação do Responsável
                                                     </div>
+                                                )}
+
+                                                <p className="text-sm text-main font-semibold mb-1 flex items-center gap-1.5">
+                                                    {ev.assigneeAvatar ? (
+                                                        <img src={ev.assigneeAvatar} alt={ev.assigneeName} className="w-5 h-5 rounded-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-5 h-5 rounded-full bg-main/10 flex items-center justify-center text-[10px] font-bold">
+                                                            {ev.assigneeName.charAt(0)}
+                                                        </div>
+                                                    )}
+                                                    {ev.assigneeName}
+                                                </p>
+                                                <p className="text-sm text-muted">Cliente: {ev.client}</p>
+                                                {ev.createdByName && (
+                                                    <p className="text-xs text-dim mt-0.5">Criado por: <span className="text-slate-400 font-medium">{ev.createdByName}</span></p>
+                                                )}
+                                                {ev.location && (
+                                                    <p className="text-xs text-dim flex items-center gap-1 mt-1"><MapPin className="w-3 h-3" />{ev.location}</p>
+                                                )}
+
+                                                <div className="mt-4 pt-4 border-t border-border flex justify-end">
+                                                    <a
+                                                        href={buildGoogleCalendarUrl({
+                                                            title: `[${cfg.label}] ${ev.title}`,
+                                                            startDateIso: ev.isoStart,
+                                                            durationHours: ev.duration,
+                                                            location: ev.location
+                                                        })}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
+                                                    >
+                                                        <CalendarIcon className="w-3.5 h-3.5" /> Google Calendar
+                                                    </a>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 ) : (
-                                    <div className="text-center py-10 text-slate-500">
-                                        <p>Livre para novos agendamentos!</p>
+                                    <div className="text-center py-10 text-dim">
+                                        <p>Nenhum evento. Deseja adicionar?</p>
                                     </div>
                                 )}
                             </div>
@@ -314,61 +304,26 @@ export default function Calendar() {
                 )}
             </AnimatePresence>
 
-            {/* Demand Form Modal */}
+            {/* Area Selector Modal */}
             <AnimatePresence>
-                {showDemandForm && (
-                    <>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setShowDemandForm(false)}
-                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-                        />
-                        <motion.div
-                            initial={{ x: "100%" }}
-                            animate={{ x: 0 }}
-                            exit={{ x: "100%" }}
-                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            className="fixed inset-y-0 right-0 w-full max-w-md bg-[#111121] border-l border-[#2d2d42] z-50 shadow-2xl"
-                        >
-                            <DemandForm
-                                type="GENERIC"
-                                onClose={() => setShowDemandForm(false)}
-                                onSuccess={() => {
-                                    loadEvents();
-                                    setShowDemandForm(false);
-                                }}
-                            />
-                        </motion.div>
-                    </>
+                {showAreaSelector && (
+                    <AreaSelector onSelect={handleAreaSelected} onClose={() => setShowAreaSelector(false)} />
                 )}
             </AnimatePresence>
 
-            {/* Shoot Form Modal (Media Day specific) */}
+            {/* Demand Form Panel */}
             <AnimatePresence>
-                {showShootForm && (
+                {showDemandForm && (
                     <>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setShowShootForm(false)}
-                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-                        />
-                        <motion.div
-                            initial={{ x: "100%" }}
-                            animate={{ x: 0 }}
-                            exit={{ x: "100%" }}
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            onClick={() => setShowDemandForm(false)} className="fixed inset-0 bg-background/60 backdrop-blur-sm z-40" />
+                        <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
                             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            className="fixed inset-y-0 right-0 w-full max-w-md bg-[#111121] border-l border-[#2d2d42] z-50 shadow-2xl"
-                        >
-                            <ShootForm
-                                onClose={() => setShowShootForm(false)}
-                                onSuccess={() => {
-                                    loadEvents();
-                                    setShowShootForm(false);
-                                }}
+                            className="fixed inset-y-0 right-0 w-full max-w-lg bg-background border-l border-border z-50 shadow-2xl overflow-y-auto">
+                            <DemandForm
+                                area={selectedArea || "GENERIC"}
+                                onClose={() => setShowDemandForm(false)}
+                                onSuccess={() => { loadEvents(); setShowDemandForm(false); }}
                             />
                         </motion.div>
                     </>

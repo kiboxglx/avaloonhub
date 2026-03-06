@@ -22,7 +22,7 @@ export function Card({ className, children, ...props }) {
 export function CardHeader({ title, subtitle, className }) {
     return (
         <div className={cn("flex flex-col gap-1", className)}>
-            <h3 className="text-lg font-semibold text-white">{title}</h3>
+            <h3 className="text-lg font-semibold text-main">{title}</h3>
             {subtitle && <p className="text-sm text-gray-400">{subtitle}</p>}
         </div>
     );

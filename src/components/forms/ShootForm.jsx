@@ -95,15 +95,15 @@ export function ShootForm({ onClose, onSuccess }) {
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#111121] text-white">
-            <div className="flex items-center justify-between p-6 border-b border-[#2d2d42]">
+        <div className="flex flex-col h-full bg-background text-main">
+            <div className="flex items-center justify-between p-6 border-b border-border">
                 <div>
                     <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-500">
                         Nova Filmagem
                     </h2>
-                    <p className="text-xs text-slate-400">Agendar Media Day ou Gravação</p>
+                    <p className="text-xs text-muted">Agendar Media Day ou Gravação</p>
                 </div>
-                <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-slate-400 hover:text-white">
+                <button onClick={onClose} className="p-2 hover:bg-main/10 rounded-full text-muted hover:text-main">
                     <X className="w-5 h-5" />
                 </button>
             </div>
@@ -118,11 +118,11 @@ export function ShootForm({ onClose, onSuccess }) {
                         {/* Title & Client */}
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-400 mb-1">Nome do Projeto / Media Day</label>
+                                <label className="block text-sm font-medium text-muted mb-1">Nome do Projeto / Media Day</label>
                                 <input
                                     required
                                     type="text"
-                                    className="w-full bg-[#1e1e2d] border border-[#2d2d42] rounded-lg p-3 text-white focus:border-avaloon-orange outline-none"
+                                    className="w-full bg-card border border-border rounded-lg p-3 text-main focus:border-avaloon-orange outline-none"
                                     placeholder="Ex: Media Day Verão 2024"
                                     value={formData.title}
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
@@ -130,10 +130,10 @@ export function ShootForm({ onClose, onSuccess }) {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-400 mb-1">Cliente</label>
+                                <label className="block text-sm font-medium text-muted mb-1">Cliente</label>
                                 <select
                                     required
-                                    className="w-full bg-[#1e1e2d] border border-[#2d2d42] rounded-lg p-3 text-white focus:border-avaloon-orange outline-none"
+                                    className="w-full bg-card border border-border rounded-lg p-3 text-main focus:border-avaloon-orange outline-none"
                                     value={formData.client_id}
                                     onChange={e => setFormData({ ...formData, client_id: e.target.value })}
                                 >
@@ -146,37 +146,37 @@ export function ShootForm({ onClose, onSuccess }) {
                         </div>
 
                         {/* Date, Time, Location */}
-                        <div className="space-y-4 pt-4 border-t border-[#2d2d42]">
-                            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <div className="space-y-4 pt-4 border-t border-border">
+                            <h3 className="text-sm font-bold text-main flex items-center gap-2">
                                 <Calendar className="w-4 h-4 text-red-500" /> Logística
                             </h3>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="col-span-2">
-                                    <label className="block text-xs font-medium text-slate-400 mb-1">Data</label>
+                                    <label className="block text-xs font-medium text-muted mb-1">Data</label>
                                     <input
                                         required
                                         type="date"
-                                        className="w-full bg-[#1e1e2d] border border-[#2d2d42] rounded-lg p-3 text-white focus:border-avaloon-orange outline-none color-scheme-dark"
+                                        className="w-full bg-card border border-border rounded-lg p-3 text-main focus:border-avaloon-orange outline-none color-scheme-dark"
                                         value={formData.scheduled_date}
                                         onChange={e => setFormData({ ...formData, scheduled_date: e.target.value })}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-400 mb-1">Início</label>
+                                    <label className="block text-xs font-medium text-muted mb-1">Início</label>
                                     <input
                                         required
                                         type="time"
-                                        className="w-full bg-[#1e1e2d] border border-[#2d2d42] rounded-lg p-3 text-white focus:border-avaloon-orange outline-none color-scheme-dark"
+                                        className="w-full bg-card border border-border rounded-lg p-3 text-main focus:border-avaloon-orange outline-none color-scheme-dark"
                                         value={formData.scheduled_start_time}
                                         onChange={e => setFormData({ ...formData, scheduled_start_time: e.target.value })}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-400 mb-1">Fim (Previsto)</label>
+                                    <label className="block text-xs font-medium text-muted mb-1">Fim (Previsto)</label>
                                     <input
                                         type="time"
-                                        className="w-full bg-[#1e1e2d] border border-[#2d2d42] rounded-lg p-3 text-white focus:border-avaloon-orange outline-none color-scheme-dark"
+                                        className="w-full bg-card border border-border rounded-lg p-3 text-main focus:border-avaloon-orange outline-none color-scheme-dark"
                                         value={formData.scheduled_end_time}
                                         onChange={e => setFormData({ ...formData, scheduled_end_time: e.target.value })}
                                     />
@@ -184,13 +184,13 @@ export function ShootForm({ onClose, onSuccess }) {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-slate-400 mb-1 flex items-center gap-1">
+                                <label className="block text-xs font-medium text-muted mb-1 flex items-center gap-1">
                                     <MapPin className="w-3 h-3" /> Local da Gravação
                                 </label>
                                 <input
                                     required
                                     type="text"
-                                    className="w-full bg-[#1e1e2d] border border-[#2d2d42] rounded-lg p-3 text-white focus:border-avaloon-orange outline-none"
+                                    className="w-full bg-card border border-border rounded-lg p-3 text-main focus:border-avaloon-orange outline-none"
                                     placeholder="Endereço completo ou Nome do Estúdio"
                                     value={formData.location}
                                     onChange={e => setFormData({ ...formData, location: e.target.value })}
@@ -199,8 +199,8 @@ export function ShootForm({ onClose, onSuccess }) {
                         </div>
 
                         {/* Crew Selection */}
-                        <div className="space-y-4 pt-4 border-t border-[#2d2d42]">
-                            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <div className="space-y-4 pt-4 border-t border-border">
+                            <h3 className="text-sm font-bold text-main flex items-center gap-2">
                                 <Users className="w-4 h-4 text-blue-500" /> Equipe Necessária
                             </h3>
                             <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-2">
@@ -209,8 +209,8 @@ export function ShootForm({ onClose, onSuccess }) {
                                         key={member.id}
                                         onClick={() => toggleCrewMember(member.id)}
                                         className={`p-2 rounded-lg border cursor-pointer transition-all flex items-center gap-2 ${formData.crew_ids.includes(member.id)
-                                                ? 'bg-blue-500/20 border-blue-500 text-white'
-                                                : 'bg-[#1e1e2d] border-[#2d2d42] text-slate-400 hover:border-slate-500'
+                                                ? 'bg-blue-500/20 border-blue-500 text-main'
+                                                : 'bg-card border-border text-muted hover:border-slate-500'
                                             }`}
                                     >
                                         <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden">
@@ -227,21 +227,21 @@ export function ShootForm({ onClose, onSuccess }) {
                                     </div>
                                 ))}
                                 {teamMembers.length === 0 && (
-                                    <p className="text-xs text-slate-500 col-span-2">Nenhum membro na equipe ainda.</p>
+                                    <p className="text-xs text-dim col-span-2">Nenhum membro na equipe ainda.</p>
                                 )}
                             </div>
                         </div>
 
                         {/* Script & Equipment */}
-                        <div className="space-y-4 pt-4 border-t border-[#2d2d42]">
-                            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <div className="space-y-4 pt-4 border-t border-border">
+                            <h3 className="text-sm font-bold text-main flex items-center gap-2">
                                 <FileText className="w-4 h-4 text-green-500" /> Detalhes
                             </h3>
 
                             <div>
-                                <label className="block text-xs font-medium text-slate-400 mb-1">Roteiro / Observações</label>
+                                <label className="block text-xs font-medium text-muted mb-1">Roteiro / Observações</label>
                                 <textarea
-                                    className="w-full bg-[#1e1e2d] border border-[#2d2d42] rounded-lg p-3 text-white focus:border-avaloon-orange outline-none h-24 resize-none"
+                                    className="w-full bg-card border border-border rounded-lg p-3 text-main focus:border-avaloon-orange outline-none h-24 resize-none"
                                     placeholder="Briefing do dia, lista de takes..."
                                     value={formData.script}
                                     onChange={e => setFormData({ ...formData, script: e.target.value })}
@@ -249,12 +249,12 @@ export function ShootForm({ onClose, onSuccess }) {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-slate-400 mb-1 flex items-center gap-1">
+                                <label className="block text-xs font-medium text-muted mb-1 flex items-center gap-1">
                                     <Camera className="w-3 h-3" /> Equipamento Específico
                                 </label>
                                 <input
                                     type="text"
-                                    className="w-full bg-[#1e1e2d] border border-[#2d2d42] rounded-lg p-3 text-white focus:border-avaloon-orange outline-none"
+                                    className="w-full bg-card border border-border rounded-lg p-3 text-main focus:border-avaloon-orange outline-none"
                                     placeholder="Ex: Drone, Kit Iluminação Extra, Teleprompter..."
                                     value={formData.equipment_notes}
                                     onChange={e => setFormData({ ...formData, equipment_notes: e.target.value })}
@@ -266,7 +266,7 @@ export function ShootForm({ onClose, onSuccess }) {
                 )}
             </div>
 
-            <div className="p-6 border-t border-[#2d2d42] bg-[#1e1e2d]">
+            <div className="p-6 border-t border-border bg-card">
                 <ButtonAvaloon
                     type="submit"
                     form="shoot-form"

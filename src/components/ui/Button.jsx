@@ -3,9 +3,9 @@ import { Loader2 } from "lucide-react";
 
 export function Button({ className, variant = "primary", size = "md", isLoading, children, ...props }) {
     const variants = {
-        primary: "bg-avaloon-gradient text-white hover:opacity-90 shadow-lg shadow-primary/20",
-        secondary: "bg-card border border-border text-white hover:bg-white/5",
-        ghost: "bg-transparent text-gray-400 hover:text-white hover:bg-white/5",
+        primary: "bg-avaloon-gradient text-main hover:opacity-90 shadow-lg shadow-primary/20",
+        secondary: "bg-card border border-border text-main hover:bg-main/5",
+        ghost: "bg-transparent text-gray-400 hover:text-main hover:bg-main/5",
         outline: "border border-primary text-primary hover:bg-primary/10",
     };
 

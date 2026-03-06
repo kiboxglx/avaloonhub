@@ -7,9 +7,12 @@ export default {
     theme: {
         extend: {
             colors: {
-                background: "#020617", // Slate-950
-                card: "#0f172a", // Slate-900
-                border: "#1e293b",
+                background: "var(--base-bg)",
+                card: "var(--base-card)",
+                border: "var(--base-border)",
+                main: "var(--text-main)",
+                muted: "var(--text-muted)",
+                dim: "var(--text-dim)",
                 primary: {
                     light: "#ef4444",
                     DEFAULT: "#ec5b13",

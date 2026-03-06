@@ -30,7 +30,7 @@ export default function Finance() {
                     <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
                         Financeiro de Produção
                     </h2>
-                    <p className="text-slate-400">Controle de pagamentos de diárias e despesas de filmagem.</p>
+                    <p className="text-muted">Controle de pagamentos de diárias e despesas de filmagem.</p>
                 </div>
                 <div className="flex gap-2">
                     <ButtonAvaloon variant="outline">
@@ -58,7 +58,7 @@ export default function Finance() {
                     </ResponsiveContainer>
                 </StatCard>
                 <StatCard label="Diárias Pagas (Mês)" value="34" trend="+3">
-                    <div className="flex items-center justify-center h-full text-slate-400 font-medium">
+                    <div className="flex items-center justify-center h-full text-muted font-medium">
                         <Video className="w-5 h-5 mr-2 text-avaloon-orange" />
                         Filmagens Confirmadas
                     </div>
@@ -73,25 +73,25 @@ export default function Finance() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <GlassCard className="lg:col-span-2 p-6">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xl font-bold text-white">Histórico de Pagamentos</h3>
+                        <h3 className="text-xl font-bold text-main">Histórico de Pagamentos</h3>
                         <ButtonAvaloon variant="ghost" className="text-xs h-8">
                             <Filter className="w-3 h-3 mr-1" /> Filtrar
                         </ButtonAvaloon>
                     </div>
                     <div className="space-y-4">
                         {expenses.map((item) => (
-                            <div key={item.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/5">
+                            <div key={item.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-main/5 transition-colors border border-transparent hover:border-main/5">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 font-bold border border-slate-700">
+                                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-muted font-bold border border-slate-700">
                                         {item.videomaker.charAt(0)}
                                     </div>
                                     <div>
-                                        <p className="text-white font-medium">{item.videomaker}</p>
-                                        <p className="text-xs text-slate-400">{item.project} • {item.date}</p>
+                                        <p className="text-main font-medium">{item.videomaker}</p>
+                                        <p className="text-xs text-muted">{item.project} • {item.date}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <span className="font-bold text-white block">{item.amount}</span>
+                                    <span className="font-bold text-main block">{item.amount}</span>
                                     <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${item.status === 'Pago' ? 'bg-emerald-500/10 text-emerald-500' :
                                             item.status === 'Pendente' ? 'bg-yellow-500/10 text-yellow-500' :
                                                 'bg-blue-500/10 text-blue-500'
@@ -105,19 +105,19 @@ export default function Finance() {
                 </GlassCard>
 
                 <GlassCard className="p-6">
-                    <h3 className="text-xl font-bold text-white mb-4">Regras de Pagamento</h3>
+                    <h3 className="text-xl font-bold text-main mb-4">Regras de Pagamento</h3>
                     <div className="space-y-4 text-sm text-slate-300">
                         <div className="p-3 bg-slate-900/50 rounded-lg border border-slate-800">
-                            <strong className="block text-white mb-1">Diária Padrão</strong>
+                            <strong className="block text-main mb-1">Diária Padrão</strong>
                             Pagamento realizado até 2 dias úteis após a confirmação do material bruto.
                         </div>
                         <div className="p-3 bg-slate-900/50 rounded-lg border border-slate-800">
-                            <strong className="block text-white mb-1">Reembolso de Transporte</strong>
+                            <strong className="block text-main mb-1">Reembolso de Transporte</strong>
                             Necessário anexar comprovantes (Uber/Combustível) no briefing do projeto.
                         </div>
                     </div>
 
-                    <div className="mt-6 pt-6 border-t border-white/5">
+                    <div className="mt-6 pt-6 border-t border-main/5">
                         <ButtonAvaloon variant="outline" className="w-full justify-center">
                             Configurar Tabelas de Preços
                         </ButtonAvaloon>

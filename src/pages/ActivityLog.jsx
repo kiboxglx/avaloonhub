@@ -1,9 +1,11 @@
 import { useState } from "react";
 import {
     Search, Filter, History, User, FilePlus, FileEdit, Trash2,
-    CheckCircle, AlertCircle, Calendar, Video, Palette, Briefcase
+    CheckCircle, AlertCircle, Calendar, Video, Palette, Briefcase, UploadCloud
 } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { ButtonAvaloon } from "@/components/ui/ButtonAvaloon";
+import { ProductionUploadModal } from "@/components/forms/ProductionUploadModal";
 
 const MOCK_LOGS = [
     { id: 1, user: "João Silva", role: "Videomaker", action: "create", target: "Projeto Alpha Externa", sector: "Video", time: "Há 10 min" },
@@ -17,13 +19,16 @@ const MOCK_LOGS = [
 export default function ActivityLog() {
     const [filter, setFilter] = useState("Todos");
     const [searchTerm, setSearchTerm] = useState("");
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const [logs, setLogs] = useState(MOCK_LOGS);
 
     const getIcon = (action) => {
         switch (action) {
             case 'create': return <FilePlus className="w-4 h-4 text-green-500" />;
             case 'update': return <FileEdit className="w-4 h-4 text-blue-500" />;
             case 'delete': return <Trash2 className="w-4 h-4 text-red-500" />;
-            default: return <History className="w-4 h-4 text-slate-500" />;
+            case 'upload': return <UploadCloud className="w-4 h-4 text-avaloon-orange" />;
+            default: return <History className="w-4 h-4 text-dim" />;
         }
     };
 
@@ -38,23 +43,59 @@ export default function ActivityLog() {
     };
 
     // Filter Logic
-    const filteredLogs = MOCK_LOGS.filter(log => {
+    const filteredLogs = logs.filter(log => {
         const matchesFilter = filter === "Todos" || log.sector === filter;
         const matchesSearch = log.target.toLowerCase().includes(searchTerm.toLowerCase()) || log.user.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesFilter && matchesSearch;
     });
+
+    const handleUploadSuccess = (data) => {
+        const newLog = {
+            id: Date.now(),
+            user: "Eu (Ativo)",
+            role: "Designer",
+            action: "upload",
+            target: `Produção (Drive)`,
+            sector: "Design",
+            time: "Agora",
+            detail: `${data.fileCount} arquivos registrados.`
+        };
+        setLogs([newLog, ...logs]);
+        setIsUploadModalOpen(false);
+    };
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
                     <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 flex items-center gap-3">
-                        <History className="w-8 h-8 text-white" />
-                        Histórico de Atividades
+                        <History className="w-8 h-8 text-main" />
+                        Histórico e Produção
                     </h2>
-                    <p className="text-slate-400">Rastreabilidade completa de ações por setor.</p>
+                    <p className="text-muted">Rastreabilidade completa de ações e entregas por setor.</p>
                 </div>
+
+                <ButtonAvaloon
+                    variant="primary"
+                    className="flex-shrink-0"
+                    onClick={() => setIsUploadModalOpen(true)}
+                >
+                    <UploadCloud className="w-4 h-4 mr-2" />
+                    Registrar Produção
+                </ButtonAvaloon>
             </div>
+
+            {/* Modal de Upload */}
+            {isUploadModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+                    <div className="bg-background rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-border">
+                        <ProductionUploadModal
+                            onClose={() => setIsUploadModalOpen(false)}
+                            onSuccess={handleUploadSuccess}
+                        />
+                    </div>
+                </div>
+            )}
 
             {/* Filters */}
             <GlassCard className="p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -64,8 +105,8 @@ export default function ActivityLog() {
                             key={cat}
                             onClick={() => setFilter(cat)}
                             className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${filter === cat
-                                    ? "bg-avaloon-orange text-white"
-                                    : "bg-[#111121] text-slate-400 hover:text-white"
+                                ? "bg-avaloon-orange text-main"
+                                : "bg-background text-muted hover:text-main"
                                 }`}
                         >
                             {cat}
@@ -74,13 +115,13 @@ export default function ActivityLog() {
                 </div>
 
                 <div className="relative w-full md:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
                     <input
                         type="text"
                         placeholder="Buscar usuário ou ação..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-[#111121] border border-[#2d2d42] rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:border-avaloon-orange outline-none"
+                        className="w-full bg-background border border-border rounded-lg pl-10 pr-4 py-2 text-sm text-main focus:border-avaloon-orange outline-none"
                     />
                 </div>
             </GlassCard>
@@ -88,40 +129,40 @@ export default function ActivityLog() {
             {/* Timeline Log */}
             <div className="space-y-4">
                 {filteredLogs.map((log) => (
-                    <div key={log.id} className="bg-[#1e1e2d] border border-[#2d2d42] rounded-xl p-4 flex items-start gap-4 hover:bg-[#252546] transition-colors group">
+                    <div key={log.id} className="bg-card border border-border rounded-xl p-4 flex items-start gap-4 hover:bg-[#1f1f1f] transition-colors group">
                         {/* User Avatar */}
-                        <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white uppercase flex-shrink-0 border-2 border-[#1e1e2d] group-hover:border-avaloon-orange/50 transition-colors">
+                        <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-main uppercase flex-shrink-0 border-2 border-[#0a0a0a] group-hover:border-avaloon-orange/50 transition-colors">
                             {log.user.substring(0, 2)}
                         </div>
 
                         <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <p className="text-white text-sm">
+                                    <p className="text-main text-sm">
                                         <span className="font-bold">{log.user}</span>
-                                        <span className="text-slate-500 mx-1">
+                                        <span className="text-dim mx-1">
                                             {log.action === 'create' ? 'criou' : log.action === 'update' ? 'atualizou' : 'excluiu'}
                                         </span>
                                         <span className="font-bold text-avaloon-orange">{log.target}</span>
                                     </p>
                                     {log.detail && (
-                                        <p className="text-xs text-slate-400 mt-1 italic">"{log.detail}"</p>
+                                        <p className="text-xs text-muted mt-1 italic">"{log.detail}"</p>
                                     )}
                                 </div>
-                                <span className="text-xs text-slate-500 font-mono flex-shrink-0">{log.time}</span>
+                                <span className="text-xs text-dim font-mono flex-shrink-0">{log.time}</span>
                             </div>
 
                             <div className="flex items-center gap-3 mt-3">
                                 {/* Sector Badge */}
-                                <div className="flex items-center gap-1 text-[10px] font-bold uppercase text-slate-400 bg-[#111121] px-2 py-1 rounded border border-[#2d2d42]">
+                                <div className="flex items-center gap-1 text-[10px] font-bold uppercase text-muted bg-background px-2 py-1 rounded border border-border">
                                     {getSectorIcon(log.sector)}
                                     {log.sector}
                                 </div>
 
                                 {/* Action Badge */}
                                 <div className={`flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded border ${log.action === 'create' ? 'bg-green-500/10 border-green-500/20 text-green-500' :
-                                        log.action === 'update' ? 'bg-blue-500/10 border-blue-500/20 text-blue-500' :
-                                            'bg-red-500/10 border-red-500/20 text-red-500'
+                                    log.action === 'update' ? 'bg-blue-500/10 border-blue-500/20 text-blue-500' :
+                                        'bg-red-500/10 border-red-500/20 text-red-500'
                                     }`}>
                                     {getIcon(log.action)}
                                     {log.action === 'create' ? 'Criação' : log.action === 'update' ? 'Edição' : 'Exclusão'}
@@ -132,7 +173,7 @@ export default function ActivityLog() {
                 ))}
 
                 {filteredLogs.length === 0 && (
-                    <div className="text-center py-12 text-slate-500">
+                    <div className="text-center py-12 text-dim">
                         <History className="w-12 h-12 mx-auto mb-3 opacity-20" />
                         <p>Nenhuma atividade encontrada.</p>
                     </div>

@@ -1,7 +1,7 @@
 export const Logo = ({ className, size = "default" }) => {
     // Large sizes for maximum visibility
     const sizes = {
-        small: "h-20",     // Navbar mobile
+        small: "h-16",     // Navbar mobile
         default: "h-20",   // Navbar desktop
         large: "h-40 md:h-48" // Login screen
     };

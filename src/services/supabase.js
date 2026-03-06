@@ -8,4 +8,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
     console.warn('Supabase URL or Key is missing! Check your .env file.');
 }
 
+if (supabaseAnonKey?.startsWith('pk_') || supabaseAnonKey?.startsWith('sb_publishable_')) {
+    console.error('CHAVE SUPABASE INCORRETA: Você parece estar usando uma chave do STRIPE no lugar da chave do SUPABASE.');
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);

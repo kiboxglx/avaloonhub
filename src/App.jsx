@@ -1,58 +1,86 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import ProtectedRoute from "@/routes/ProtectedRoute";
 import DashboardLayout from "@/layouts/DashboardLayout";
+import { PageSkeleton, CalendarSkeleton } from "@/components/ui/Skeleton";
 
-// Pages
+// ─── Auth pages (small, kept eager) ─────────────────────────────────────────
 import Login from "@/pages/Login";
+import Register from "@/pages/Register";
 import RoleSelection from "@/pages/RoleSelection";
-import Calendar from "@/pages/Calendar";
-import TeamDirectory from "@/pages/TeamDirectory";
-import Reports from "@/pages/Reports";
-import Briefings from "@/pages/Briefings";
-import Profile from "@/pages/Profile";
-import Finance from "@/pages/Finance";
-import Clients from "@/pages/Clients";
-import Settings from "@/pages/Settings";
-import ContentPlanning from "@/pages/ContentPlanning";
-import ActivityLog from "@/pages/ActivityLog"; // Import Activity Log
 
-import DashboardHome from "@/pages/DashboardHome";
+// ─── App pages (Lazy Loaded — only downloaded when the user navigates there) ─
+// Heaviest first
+const Calendar = lazy(() => import("@/pages/Calendar"));
+const Reports = lazy(() => import("@/pages/Reports"));
+const Finance = lazy(() => import("@/pages/Finance"));
+const Briefings = lazy(() => import("@/pages/Briefings"));
+const ContentPlanning = lazy(() => import("@/pages/ContentPlanning"));
+const DesignProductivity = lazy(() => import("@/pages/DesignProductivity"));
+const ActivityLog = lazy(() => import("@/pages/ActivityLog"));
+
+// Lighter pages
+const TeamDirectory = lazy(() => import("@/pages/TeamDirectory"));
+const Clients = lazy(() => import("@/pages/Clients"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const Profile = lazy(() => import("@/pages/Profile"));
+const InviteUser = lazy(() => import("@/pages/InviteUser"));
+const DashboardHome = lazy(() => import("@/pages/DashboardHome"));
+
+// ─── Shared loading fallback ──────────────────────────────────────────────────
+function PageLoader() {
+    return (
+        <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+            <div className="w-10 h-10 border-4 border-[#ec5b13] border-t-transparent rounded-full animate-spin" />
+            <p className="text-muted text-sm animate-pulse">Carregando...</p>
+        </div>
+    );
+}
+
+// ─── Suspense wrapper helper ──────────────────────────────────────────────────
+// Pass a custom fallback per route for content-aware loading skeletons
+const S = ({ children, fallback }) => (
+    <Suspense fallback={fallback ?? <PageSkeleton />}>{children}</Suspense>
+);
 
 function App() {
     return (
-        <BrowserRouter>
-            <AuthProvider>
-                <Routes>
-                    <Route path="/login" element={<Login />} />
+        <ThemeProvider>
+            <BrowserRouter>
+                <AuthProvider>
+                    <Routes>
+                        {/* Public routes */}
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
+                        <Route path="/roles" element={<RoleSelection />} />
+                        <Route path="/" element={<Navigate to="/login" replace />} />
 
-                    {/* Role Selection Screen */}
-                    <Route path="/roles" element={<RoleSelection />} />
-
-                    {/* Default redirect to login or roles based on auth state (handled by ProtectedRoute logic usually, but here simple redirect) */}
-                    <Route path="/" element={<Navigate to="/roles" replace />} />
-
-                    <Route element={<ProtectedRoute />}>
-                        {/* Dashboard Routes */}
-                        <Route path="/dashboard" element={<DashboardLayout />}>
-                            <Route index element={<DashboardHome />} />
-                            <Route path="calendar" element={<Calendar />} />
-                            <Route path="team" element={<TeamDirectory />} />
-                            <Route path="reports" element={<Reports />} />
-                            <Route path="clients" element={<Clients />} />
-                            <Route path="finance" element={<Finance />} />
-                            <Route path="settings" element={<Settings />} />
-                            <Route path="briefings" element={<Briefings />} />
-                            <Route path="profile" element={<Profile />} />
-                            <Route path="planning" element={<ContentPlanning />} />
-                            <Route path="activity" element={<ActivityLog />} />
+                        {/* Protected routes */}
+                        <Route element={<ProtectedRoute />}>
+                            <Route path="/dashboard" element={<DashboardLayout />}>
+                                <Route index element={<S><DashboardHome /></S>} />
+                                <Route path="calendar" element={<S fallback={<CalendarSkeleton />}><Calendar /></S>} />
+                                <Route path="team" element={<S><TeamDirectory /></S>} />
+                                <Route path="reports" element={<S><Reports /></S>} />
+                                <Route path="clients" element={<S><Clients /></S>} />
+                                <Route path="finance" element={<S><Finance /></S>} />
+                                <Route path="settings" element={<S><Settings /></S>} />
+                                <Route path="briefings" element={<S><Briefings /></S>} />
+                                <Route path="profile" element={<S><Profile /></S>} />
+                                <Route path="planning" element={<S><ContentPlanning /></S>} />
+                                <Route path="activity" element={<S><ActivityLog /></S>} />
+                                <Route path="productivity" element={<S><DesignProductivity /></S>} />
+                                <Route path="users" element={<S><InviteUser /></S>} />
+                            </Route>
                         </Route>
-                    </Route>
 
-                    <Route path="*" element={<Navigate to="/login" replace />} />
-                </Routes>
-            </AuthProvider>
-        </BrowserRouter>
+                        <Route path="*" element={<Navigate to="/login" replace />} />
+                    </Routes>
+                </AuthProvider>
+            </BrowserRouter>
+        </ThemeProvider>
     );
 }
 
